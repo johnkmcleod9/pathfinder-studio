@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://pathfinder.studio/schemas/variable-v1.schema.json",
+  "title": "Pathfinder Variable",
+  "description": "Variable definitions for Pathfinder Studio — 8 types, 4 scope levels",
+  "type": "object",
+  "required": ["type", "defaultValue"],
+  "additionalProperties": false,
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": ["trueFalse", "boolean", "number", "text", "slider", "sequence", "date", "math"],
+      "description": "8 supported variable types"
+    },
+    "defaultValue": {},
+    "scope": {
+      "type": "string",
+      "enum": ["course", "scene", "quiz", "slide"],
+      "default": "course",
+      "description": "4 scope levels"
+    },
+    "persistAcrossSessions": { "type": "boolean", "default": false },
+    "exportToLMS": { "type": "boolean", "default": false },
+    "lmsMapping": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "standard": { "type": "string", "enum": ["scorm12", "scorm2004", "xapi"] },
+        "key": { "type": "string" }
+      }
+    },
+    "description": { "type": "string" },
+    "tags": { "type": "array", "items": { "type": "string" } },
+    "min": { "type": "number" },
+    "max": { "type": "number" },
+    "decimalPlaces": { "type": "integer" },
+    "maxLength": { "type": "integer" },
+    "validValues": { "type": "array", "items": {} }
+  }
+}

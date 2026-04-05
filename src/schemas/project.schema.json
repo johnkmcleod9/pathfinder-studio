@@ -1,0 +1,780 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://pathfinder.studio/schemas/pathfinder-v1.schema.json",
+  "title": "Pathfinder Project",
+  "description": "Root schema for .pathfinder project file (project.json inside .pathfinder ZIP)",
+  "type": "object",
+  "required": [
+    "$schema",
+    "schemaVersion",
+    "formatVersion",
+    "metadata",
+    "slides",
+    "variables",
+    "navigation"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "const": "https://pathfinder.studio/schemas/pathfinder-v1.schema.json"
+    },
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "formatVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+$"
+    },
+    "metadata": {
+      "$ref": "#/$defs/Metadata"
+    },
+    "settings": {
+      "$ref": "#/$defs/Settings"
+    },
+    "slides": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Slide"
+      },
+      "minItems": 1
+    },
+    "variables": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/VariableDef"
+      }
+    },
+    "quizBanks": {
+      "type": "object"
+    },
+    "navigation": {
+      "$ref": "#/$defs/Navigation"
+    },
+    "localization": {
+      "$ref": "#/$defs/Localization"
+    }
+  },
+  "$defs": {
+    "Metadata": {
+      "type": "object",
+      "required": [
+        "id",
+        "title",
+        "author",
+        "authorId",
+        "createdAt",
+        "modifiedAt"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "author": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "authorId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "modifiedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 2048
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "uniqueItems": true
+        },
+        "version": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "language": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 10
+        },
+        "defaultDuration": {
+          "type": "string"
+        },
+        "thumbnail": {
+          "type": "string"
+        }
+      }
+    },
+    "Settings": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "canvas": {
+          "$ref": "#/$defs/CanvasSettings"
+        },
+        "player": {
+          "$ref": "#/$defs/PlayerSettings"
+        },
+        "publish": {
+          "$ref": "#/$defs/PublishSettings"
+        },
+        "accessibility": {
+          "$ref": "#/$defs/AccessibilitySettings"
+        }
+      }
+    },
+    "CanvasSettings": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "width": {
+          "type": "integer",
+          "default": 1280,
+          "minimum": 640,
+          "maximum": 4096
+        },
+        "height": {
+          "type": "integer",
+          "default": 720,
+          "minimum": 360,
+          "maximum": 2304
+        },
+        "aspectRatio": {
+          "type": "string",
+          "enum": [
+            "16:9",
+            "4:3",
+            "16:10",
+            "21:9"
+          ]
+        },
+        "backgroundColor": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        }
+      }
+    },
+    "PlayerSettings": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "showNavigationArrows": {
+          "type": "boolean",
+          "default": true
+        },
+        "showProgressBar": {
+          "type": "boolean",
+          "default": true
+        },
+        "showSlideNumber": {
+          "type": "boolean",
+          "default": true
+        },
+        "showAudioPlayer": {
+          "type": "boolean",
+          "default": true
+        },
+        "showCCButton": {
+          "type": "boolean",
+          "default": true
+        },
+        "showSearch": {
+          "type": "boolean",
+          "default": false
+        },
+        "colorScheme": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "primary": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}$"
+            },
+            "secondary": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}$"
+            }
+          }
+        },
+        "logo": {
+          "type": "string"
+        },
+        "logoPosition": {
+          "type": "string",
+          "enum": [
+            "top-right",
+            "top-left",
+            "bottom-right",
+            "bottom-left"
+          ]
+        }
+      }
+    },
+    "PublishSettings": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "defaultStandard": {
+          "type": "string",
+          "enum": [
+            "scorm12",
+            "scorm2004",
+            "xapi",
+            "html5"
+          ],
+          "default": "scorm2004"
+        },
+        "passingScore": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "default": 80
+        },
+        "completionCriteria": {
+          "type": "string",
+          "enum": [
+            "slides_viewed",
+            "quiz_passed",
+            "all_slides",
+            "time_spent"
+          ]
+        },
+        "completionValue": {
+          "type": "string"
+        },
+        "allowReview": {
+          "type": "boolean",
+          "default": true
+        },
+        "exitBehavior": {
+          "type": "string",
+          "enum": [
+            "resume",
+            "start",
+            "exit"
+          ]
+        }
+      }
+    },
+    "AccessibilitySettings": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "focusHighContrast": {
+          "type": "boolean"
+        },
+        "autoAltTextFromOCR": {
+          "type": "boolean"
+        },
+        "reducedMotion": {
+          "type": "string",
+          "enum": [
+            "respect-system-setting",
+            "always-on",
+            "always-off"
+          ]
+        }
+      }
+    },
+    "Slide": {
+      "type": "object",
+      "required": [
+        "id",
+        "background",
+        "zOrder",
+        "objects"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^slide-[a-zA-Z0-9_-]+$"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "layout": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "background": {
+          "$ref": "#/$defs/Background"
+        },
+        "zOrder": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "objects": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/ObjectBase"
+          }
+        },
+        "layers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Layer"
+          }
+        },
+        "triggers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Trigger"
+          }
+        },
+        "audio": {
+          "$ref": "#/$defs/AudioRef"
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 4096
+        }
+      }
+    },
+    "Background": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "solid",
+            "gradient",
+            "image",
+            "video"
+          ]
+        },
+        "color": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        },
+        "gradient": {
+          "$ref": "#/$defs/Gradient"
+        },
+        "media": {
+          "$ref": "#/$defs/MediaRef"
+        }
+      }
+    },
+    "Gradient": {
+      "type": "object",
+      "required": [
+        "type",
+        "stops"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "linear",
+            "radial"
+          ]
+        },
+        "angle": {
+          "type": "number"
+        },
+        "stops": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "color",
+              "position"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "color": {
+                "type": "string",
+                "pattern": "^#[0-9A-Fa-f]{6}$"
+              },
+              "position": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          },
+          "minItems": 2
+        }
+      }
+    },
+    "MediaRef": {
+      "type": "object",
+      "required": [
+        "id",
+        "src"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "src": {
+          "type": "string"
+        },
+        "alt": {
+          "type": "string"
+        }
+      }
+    },
+    "AudioRef": {
+      "type": "object",
+      "required": [
+        "id",
+        "src"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "src": {
+          "type": "string"
+        },
+        "volume": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "loop": {
+          "type": "boolean"
+        }
+      }
+    },
+    "Layer": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "objects"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "visible": {
+          "type": "boolean",
+          "default": true
+        },
+        "background": {
+          "$ref": "#/$defs/Background"
+        },
+        "objects": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/ObjectBase"
+          }
+        }
+      }
+    },
+    "ObjectBase": {
+      "type": "object",
+      "required": [
+        "type",
+        "rect"
+      ],
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "rect": {
+          "$ref": "#/$defs/Rect"
+        },
+        "visibility": {
+          "$ref": "#/$defs/Visibility"
+        },
+        "triggers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Trigger"
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "Rect": {
+      "type": "object",
+      "required": [
+        "x",
+        "y",
+        "w",
+        "h"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "w": {
+          "type": "number",
+          "minimum": 0
+        },
+        "h": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "Visibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "initial": {
+          "type": "string",
+          "enum": [
+            "visible",
+            "hidden",
+            "conditional"
+          ]
+        },
+        "conditional": {
+          "type": "array"
+        }
+      }
+    },
+    "Trigger": {
+      "type": "object",
+      "required": [
+        "id",
+        "event",
+        "action"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "event": {
+          "$ref": "#/$defs/TriggerEvent"
+        },
+        "action": {
+          "$ref": "#/$defs/TriggerAction"
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/TriggerCondition"
+          }
+        },
+        "priority": {
+          "type": "integer",
+          "default": 0
+        },
+        "description": {
+          "type": "string"
+        },
+        "disabled": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "TriggerEvent": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        }
+      }
+    },
+    "TriggerCondition": {
+      "type": "object",
+      "required": [
+        "type",
+        "variable"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "variable": {
+          "type": "string"
+        },
+        "operator": {
+          "type": "string"
+        },
+        "value": {}
+      }
+    },
+    "TriggerAction": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "type": {
+          "type": "string"
+        }
+      }
+    },
+    "VariableDef": {
+      "type": "object",
+      "required": [
+        "type",
+        "defaultValue"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "trueFalse",
+            "boolean",
+            "number",
+            "text",
+            "slider",
+            "sequence",
+            "date",
+            "math"
+          ],
+          "description": "8 variable types"
+        },
+        "defaultValue": {},
+        "scope": {
+          "type": "string",
+          "enum": [
+            "course",
+            "scene",
+            "quiz",
+            "slide"
+          ],
+          "default": "course"
+        },
+        "persistAcrossSessions": {
+          "type": "boolean",
+          "default": false
+        },
+        "exportToLMS": {
+          "type": "boolean",
+          "default": false
+        },
+        "lmsMapping": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "standard": {
+              "type": "string",
+              "enum": [
+                "scorm12",
+                "scorm2004",
+                "xapi"
+              ]
+            },
+            "key": {
+              "type": "string"
+            }
+          }
+        },
+        "description": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "min": {
+          "type": "number"
+        },
+        "max": {
+          "type": "number"
+        },
+        "decimalPlaces": {
+          "type": "integer"
+        },
+        "maxLength": {
+          "type": "integer"
+        },
+        "validValues": {
+          "type": "array",
+          "items": {}
+        }
+      }
+    },
+    "Navigation": {
+      "type": "object",
+      "required": [
+        "entrySlide",
+        "slides"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "entrySlide": {
+          "type": "string"
+        },
+        "slides": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "sectionDefaults": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "navArrows": {
+              "type": "boolean"
+            },
+            "glossaryLink": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "Localization": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "playerLabels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

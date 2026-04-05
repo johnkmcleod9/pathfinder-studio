@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://pathfinder.studio/schemas/trigger-v1.schema.json",
+  "title": "Pathfinder Trigger",
+  "description": "Trigger definitions for Pathfinder Studio events and actions",
+  "type": "object",
+  "required": ["id", "event", "action"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string" },
+    "event": { "$ref": "#/$defs/TriggerEvent" },
+    "action": { "$ref": "#/$defs/TriggerAction" },
+    "conditions": { "type": "array", "items": { "$ref": "#/$defs/TriggerCondition" } },
+    "priority": { "type": "integer", "default": 0 },
+    "description": { "type": "string" },
+    "disabled": { "type": "boolean", "default": false }
+  },
+  "$defs": {
+    "TriggerEvent": {
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": true,
+      "properties": {
+        "type": { "type": "string" },
+        "source": { "type": "string" }
+      }
+    },
+    "TriggerCondition": {
+      "type": "object",
+      "required": ["type", "variable"],
+      "additionalProperties": true,
+      "properties": {
+        "type": { "type": "string" },
+        "variable": { "type": "string" },
+        "operator": { "type": "string" },
+        "value": {}
+      }
+    },
+    "TriggerAction": {
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": true,
+      "properties": {
+        "type": { "type": "string" }
+      }
+    }
+  }
+}

@@ -1,0 +1,374 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://pathfinder.studio/schemas/slide-v1.schema.json",
+  "title": "Pathfinder Slide",
+  "description": "Slide schema for Pathfinder Studio \u2014 all layer/object types",
+  "type": "object",
+  "required": [
+    "id",
+    "background",
+    "zOrder",
+    "objects"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^slide-[a-zA-Z0-9_-]+$"
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "layout": {
+      "type": "string",
+      "maxLength": 128
+    },
+    "background": {
+      "$ref": "#/$defs/Background"
+    },
+    "zOrder": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "objects": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/ObjectBase"
+      }
+    },
+    "layers": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Layer"
+      }
+    },
+    "triggers": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Trigger"
+      }
+    },
+    "audio": {
+      "$ref": "#/$defs/AudioRef"
+    },
+    "notes": {
+      "type": "string",
+      "maxLength": 4096
+    }
+  },
+  "$defs": {
+    "Background": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "solid",
+            "gradient",
+            "image",
+            "video"
+          ]
+        },
+        "color": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        },
+        "gradient": {
+          "$ref": "#/$defs/Gradient"
+        },
+        "media": {
+          "$ref": "#/$defs/MediaRef"
+        }
+      }
+    },
+    "Gradient": {
+      "type": "object",
+      "required": [
+        "type",
+        "stops"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "linear",
+            "radial"
+          ]
+        },
+        "angle": {
+          "type": "number"
+        },
+        "stops": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "color",
+              "position"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "color": {
+                "type": "string",
+                "pattern": "^#[0-9A-Fa-f]{6}$"
+              },
+              "position": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          },
+          "minItems": 2
+        }
+      }
+    },
+    "MediaRef": {
+      "type": "object",
+      "required": [
+        "id",
+        "src"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "src": {
+          "type": "string"
+        },
+        "alt": {
+          "type": "string"
+        }
+      }
+    },
+    "AudioRef": {
+      "type": "object",
+      "required": [
+        "id",
+        "src"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "src": {
+          "type": "string"
+        },
+        "volume": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "loop": {
+          "type": "boolean"
+        }
+      }
+    },
+    "Layer": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "objects"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "visible": {
+          "type": "boolean",
+          "default": true
+        },
+        "background": {
+          "$ref": "#/$defs/Background"
+        },
+        "objects": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/ObjectBase"
+          }
+        }
+      }
+    },
+    "ObjectBase": {
+      "type": "object",
+      "required": [
+        "type",
+        "rect"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "text",
+            "button",
+            "shape",
+            "image",
+            "video",
+            "audio",
+            "hotspot",
+            "drag-drop",
+            "slider",
+            "text-entry",
+            "result",
+            "character"
+          ]
+        },
+        "rect": {
+          "$ref": "#/$defs/Rect"
+        },
+        "visibility": {
+          "$ref": "#/$defs/Visibility"
+        },
+        "triggers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Trigger"
+          }
+        }
+      }
+    },
+    "Rect": {
+      "type": "object",
+      "required": [
+        "x",
+        "y",
+        "w",
+        "h"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "w": {
+          "type": "number",
+          "minimum": 0
+        },
+        "h": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "Visibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "initial": {
+          "type": "string",
+          "enum": [
+            "visible",
+            "hidden",
+            "conditional"
+          ]
+        },
+        "conditional": {
+          "type": "array"
+        }
+      }
+    },
+    "Trigger": {
+      "type": "object",
+      "required": [
+        "id",
+        "event",
+        "action"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "event": {
+          "$ref": "#/$defs/TriggerEvent"
+        },
+        "action": {
+          "$ref": "#/$defs/TriggerAction"
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/TriggerCondition"
+          }
+        },
+        "priority": {
+          "type": "integer",
+          "default": 0
+        },
+        "description": {
+          "type": "string"
+        },
+        "disabled": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "TriggerEvent": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        }
+      }
+    },
+    "TriggerCondition": {
+      "type": "object",
+      "required": [
+        "type",
+        "variable"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "variable": {
+          "type": "string"
+        },
+        "operator": {
+          "type": "string"
+        },
+        "value": {}
+      }
+    },
+    "TriggerAction": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "type": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
