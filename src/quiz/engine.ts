@@ -136,7 +136,7 @@ export class QuizEngine {
     const pointsAwarded = results.reduce((sum, r) => sum + r.pointsAwarded, 0);
     const pointsPossible = results.reduce((sum, r) => sum + r.pointsPossible, 0);
     const questionsCorrect = results.filter(r => r.correct).length;
-    const questionsTotal = results.length;
+    const questionsTotal = totalQuestions ?? results.length;
 
     const percent = pointsPossible > 0
       ? Math.round((pointsAwarded / pointsPossible) * 1000) / 10  // 1 decimal
