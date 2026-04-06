@@ -2,13 +2,22 @@
  * Pathfinder JSON Schema Validator
  * Uses Ajv for JSON Schema Draft-07 validation with forward-compatibility support.
  */
-import Ajv from 'ajv';
-import addFormats from 'ajv-formats';
-import { readFileSync } from 'fs';
-import { resolve, dirname } from 'path';
+import { createRequire } from 'module';
 import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const require = createRequire(import.meta.url);
+
+// Dynamic require for CJS modules that TypeScript ESM can't resolve cleanly
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const AjvCtor = require('ajv');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const addFormatsFn = require('ajv-formats');
+const Ajv = AjvCtor.default ?? AjvCtor;
+const addFormats = addFormatsFn.default ?? addFormatsFn;
 
 // Schema registry — loads schemas by name
 const SCHEMAS: Record<string, object> = {
@@ -121,11 +130,11 @@ export function validate(schemaName: 'project' | 'slide' | 'trigger' | 'variable
   }
 
   const valid = validator(data);
-  const errors: ValidationError[] = (validator.errors ?? []).map(err => ({
+  const errors: ValidationError[] = (validator.errors ?? []).map((err: { instancePath: string; message?: string; keyword: string; params: Record<string, unknown> }) => ({
     path: err.instancePath || '/',
     message: err.message ?? 'unknown error',
     keyword: err.keyword,
-    params: err.params as Record<string, unknown>
+    params: err.params
   }));
 
   const warnings = collectWarnings(data);

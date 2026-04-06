@@ -7,8 +7,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "test:ci": "vitest run --reporter=junit --output=junit.xml",
-    "validate": "tsx src/cli.ts"
+    "test:ci": "vitest run --reporter=junit --outputFile.junit=./junit.xml",
+    "validate": "npx tsx src/cli.ts"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
