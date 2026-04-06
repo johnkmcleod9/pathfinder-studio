@@ -1,0 +1,555 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="242" failures="0" errors="0" time="0.218">
+    <testsuite name="tests/pipeline/imsmanifest.test.ts" timestamp="2026-04-06T15:02:10.808Z" hostname="Johns-Mac-mini.local" tests="25" failures="0" errors="0" skipped="25" time="0">
+        <testcase classname="tests/pipeline/imsmanifest.test.ts" name="SCORM 1.2 Manifest Generation &gt; imsmanifest.xml structure &gt; generates manifest with correct XML namespace" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/imsmanifest.test.ts" name="SCORM 1.2 Manifest Generation &gt; imsmanifest.xml structure &gt; includes required schema locations" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/imsmanifest.test.ts" name="SCORM 1.2 Manifest Generation &gt; imsmanifest.xml structure &gt; sets manifest identifier attribute" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/imsmanifest.test.ts" name="SCORM 1.2 Manifest Generation &gt; imsmanifest.xml structure &gt; sets manifest version attribute" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/imsmanifest.test.ts" name="SCORM 1.2 Manifest Generation &gt; imsmanifest.xml structure &gt; generates organizations element with default attribute" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/imsmanifest.test.ts" name="SCORM 1.2 Manifest Generation &gt; imsmanifest.xml structure &gt; generates organization with unique identifier and title" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/imsmanifest.test.ts" name="SCORM 1.2 Manifest Generation &gt; imsmanifest.xml structure &gt; generates item referencing the sco resource" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/imsmanifest.test.ts" name="SCORM 1.2 Manifest Generation &gt; imsmanifest.xml structure &gt; generates resources element" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/imsmanifest.test.ts" name="SCORM 1.2 Manifest Generation &gt; imsmanifest.xml structure &gt; generates resource with webcontent type" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/imsmanifest.test.ts" name="SCORM 1.2 Manifest Generation &gt; imsmanifest.xml structure &gt; includes adlcp:masteryscore when passingScore is set" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/imsmanifest.test.ts" name="SCORM 1.2 Manifest Generation &gt; imsmanifest.xml structure &gt; does not include masteryscore when not provided" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/imsmanifest.test.ts" name="SCORM 1.2 Manifest Generation &gt; imsmanifest.xml structure &gt; sets href to the entry point SCO" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/imsmanifest.test.ts" name="SCORM 1.2 Manifest Generation &gt; imsmanifest.xml structure &gt; files element includes all published assets" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/imsmanifest.test.ts" name="SCORM 1.2 Manifest Generation &gt; SCORM 1.2 XSD Validation &gt; generated manifest is valid against SCORM 1.2 CAM XSD" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/imsmanifest.test.ts" name="SCORM 1.2 Manifest Generation &gt; SCORM 1.2 XSD Validation &gt; reports errors for malformed XML" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/imsmanifest.test.ts" name="SCORM 1.2 Manifest Generation &gt; SCORM 1.2 XSD Validation &gt; reports errors for missing required elements" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/imsmanifest.test.ts" name="SCORM 1.2 Manifest Generation &gt; SCORM 1.2 XSD Validation &gt; reports errors for invalid namespace" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/imsmanifest.test.ts" name="SCORM 1.2 Manifest Generation &gt; SCORM 1.2 API Wrapper &gt; api.js is included in the SCORM 1.2 package" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/imsmanifest.test.ts" name="SCORM 1.2 Manifest Generation &gt; SCORM 1.2 API Wrapper &gt; LMSInitialize returns true on success" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/imsmanifest.test.ts" name="SCORM 1.2 Manifest Generation &gt; SCORM 1.2 API Wrapper &gt; LMSSetValue sets cmi.core.lesson_status correctly" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/imsmanifest.test.ts" name="SCORM 1.2 Manifest Generation &gt; SCORM 1.2 API Wrapper &gt; LMSGetValue retrieves previously set value" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/imsmanifest.test.ts" name="SCORM 1.2 Manifest Generation &gt; SCORM 1.2 API Wrapper &gt; LMSCommit is called on slide exit" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/imsmanifest.test.ts" name="SCORM 1.2 Manifest Generation &gt; SCORM 1.2 API Wrapper &gt; Handles LMS not found gracefully (offline mode)" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/imsmanifest.test.ts" name="SCORM 1.2 Manifest Generation &gt; SCORM 1.2 API Wrapper &gt; suspend_data is serialized as base64 (max 4096 bytes)" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/imsmanifest.test.ts" name="SCORM 1.2 Manifest Generation &gt; SCORM 1.2 API Wrapper &gt; Completion status: incomplete/completed/passed/failed set correctly" time="0">
+            <skipped/>
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/pipeline/parse.test.ts" timestamp="2026-04-06T15:02:10.813Z" hostname="Johns-Mac-mini.local" tests="19" failures="0" errors="0" skipped="19" time="0">
+        <testcase classname="tests/pipeline/parse.test.ts" name="Pipeline Stage 1: Parse &gt; Valid .pathfinder → Project object &gt; parses a minimal valid .pathfinder ZIP" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/parse.test.ts" name="Pipeline Stage 1: Parse &gt; Valid .pathfinder → Project object &gt; extracts metadata (id, title, author, timestamps)" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/parse.test.ts" name="Pipeline Stage 1: Parse &gt; Valid .pathfinder → Project object &gt; extracts slides array with at least one slide" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/parse.test.ts" name="Pipeline Stage 1: Parse &gt; Valid .pathfinder → Project object &gt; extracts variables object" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/parse.test.ts" name="Pipeline Stage 1: Parse &gt; Valid .pathfinder → Project object &gt; extracts navigation with entrySlide and slides array" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/parse.test.ts" name="Pipeline Stage 1: Parse &gt; Valid .pathfinder → Project object &gt; extracts schemaVersion and formatVersion for migration tracking" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/parse.test.ts" name="Pipeline Stage 1: Parse &gt; Invalid JSON → descriptive error &gt; throws when project.json contains invalid JSON" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/parse.test.ts" name="Pipeline Stage 1: Parse &gt; Invalid JSON → descriptive error &gt; error code is JSON_PARSE_ERROR" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/parse.test.ts" name="Pipeline Stage 1: Parse &gt; Invalid JSON → descriptive error &gt; error message includes the filename" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/parse.test.ts" name="Pipeline Stage 1: Parse &gt; Invalid JSON → descriptive error &gt; error message does not leak raw JSON content" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/parse.test.ts" name="Pipeline Stage 1: Parse &gt; Missing required file → error with filename &gt; throws when project.json is missing from ZIP" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/parse.test.ts" name="Pipeline Stage 1: Parse &gt; Missing required file → error with filename &gt; error code is MISSING_FILE" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/parse.test.ts" name="Pipeline Stage 1: Parse &gt; Missing required file → error with filename &gt; error message names the missing file" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/parse.test.ts" name="Pipeline Stage 1: Parse &gt; Missing required file → error with filename &gt; throws when manifest.json is missing from ZIP" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/parse.test.ts" name="Pipeline Stage 1: Parse &gt; Missing required file → error with filename &gt; throws when content/ directory is missing" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/parse.test.ts" name="Pipeline Stage 1: Parse &gt; Media reference with no file → warning &gt; records a warning for each media reference with no matching file" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/parse.test.ts" name="Pipeline Stage 1: Parse &gt; Media reference with no file → warning &gt; warning includes the media path that is missing" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/parse.test.ts" name="Pipeline Stage 1: Parse &gt; Version mismatch → warning &gt; warns when schemaVersion is newer than supported" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/parse.test.ts" name="Pipeline Stage 1: Parse &gt; Version mismatch → warning &gt; warns (does not reject) when formatVersion is slightly older" time="0">
+            <skipped/>
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/pipeline/project-structure.test.ts" timestamp="2026-04-06T15:02:10.816Z" hostname="Johns-Mac-mini.local" tests="10" failures="0" errors="0" skipped="10" time="0">
+        <testcase classname="tests/pipeline/project-structure.test.ts" name="Project Structure (ZIP container) &gt; Valid .pathfinder ZIP opens successfully &gt; opens a valid .pathfinder ZIP without error" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/project-structure.test.ts" name="Project Structure (ZIP container) &gt; project.json exists at root &gt; rejects ZIP without project.json at root" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/project-structure.test.ts" name="Project Structure (ZIP container) &gt; project.json exists at root &gt; rejects ZIP with project.json in subdirectory" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/project-structure.test.ts" name="Project Structure (ZIP container) &gt; manifest.json exists at root &gt; rejects ZIP without manifest.json at root" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/project-structure.test.ts" name="Project Structure (ZIP container) &gt; content/ directory exists (even if empty) &gt; rejects ZIP without content/ directory" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/project-structure.test.ts" name="Project Structure (ZIP container) &gt; Media files in content/ have valid extensions &gt; accepts media files with valid extensions" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/project-structure.test.ts" name="Project Structure (ZIP container) &gt; Media files in content/ have valid extensions &gt; warns on files with unrecognized extension in content/" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/project-structure.test.ts" name="Project Structure (ZIP container) &gt; Media files in content/ have valid extensions &gt; rejects executables (exe, app, dmg) in content/" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/project-structure.test.ts" name="Project Structure (ZIP container) &gt; No hidden files (.DS_Store, Thumbs.db) &gt; warns about .DS_Store files in archive" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/pipeline/project-structure.test.ts" name="Project Structure (ZIP container) &gt; No hidden files (.DS_Store, Thumbs.db) &gt; warns about Thumbs.db files in archive" time="0">
+            <skipped/>
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/schemas/project.test.ts" timestamp="2026-04-06T15:02:10.817Z" hostname="Johns-Mac-mini.local" tests="31" failures="0" errors="0" skipped="0" time="0.006">
+        <testcase classname="tests/schemas/project.test.ts" name="Project Schema &gt; 1.1 JSON Schema Validation &gt; accepts a valid .pathfinder project file" time="0.002">
+        </testcase>
+        <testcase classname="tests/schemas/project.test.ts" name="Project Schema &gt; 1.1 JSON Schema Validation &gt; rejects when $schema is missing" time="0.001">
+        </testcase>
+        <testcase classname="tests/schemas/project.test.ts" name="Project Schema &gt; 1.1 JSON Schema Validation &gt; rejects when schemaVersion is invalid format" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/project.test.ts" name="Project Schema &gt; 1.1 JSON Schema Validation &gt; rejects when formatVersion is invalid" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/project.test.ts" name="Project Schema &gt; 1.1 JSON Schema Validation &gt; rejects when required field metadata.id is missing" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/project.test.ts" name="Project Schema &gt; 1.1 JSON Schema Validation &gt; rejects unknown top-level fields" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/project.test.ts" name="Project Schema &gt; 1.1 JSON Schema Validation &gt; warns on unknown event type (forward-compat)" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/project.test.ts" name="Project Schema &gt; 1.2 Project Structure &gt; accepts a valid .pathfinder project structure" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/project.test.ts" name="Project Schema &gt; 1.2 Project Structure &gt; rejects slides array with fewer than 1 item" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/project.test.ts" name="Project Schema &gt; 1.2 Project Structure &gt; accepts empty variables object" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/project.test.ts" name="Project Schema &gt; 1.3 Slide Data &gt; parses a slide with id, type, sceneId, and duration" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/project.test.ts" name="Project Schema &gt; 1.3 Slide Data &gt; parses a slide with solid background" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/project.test.ts" name="Project Schema &gt; 1.3 Slide Data &gt; parses a slide with gradient background" time="0.001">
+        </testcase>
+        <testcase classname="tests/schemas/project.test.ts" name="Project Schema &gt; 1.3 Slide Data &gt; parses a slide with image background referencing media" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/project.test.ts" name="Project Schema &gt; 1.3 Slide Data &gt; parses a layer with objects" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/project.test.ts" name="Project Schema &gt; 1.3 Slide Data &gt; parses an object with position and size" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/project.test.ts" name="Project Schema &gt; 1.3 Slide Data &gt; parses an object with font properties" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/project.test.ts" name="Project Schema &gt; 1.4 Trigger Data &gt; parses a trigger with event + action" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/project.test.ts" name="Project Schema &gt; 1.4 Trigger Data &gt; parses a trigger with conditions" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/project.test.ts" name="Project Schema &gt; 1.4 Trigger Data &gt; parses a trigger with disabled: true" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/project.test.ts" name="Project Schema &gt; 1.4 Trigger Data &gt; parses a trigger with nested AND/OR condition groups" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/project.test.ts" name="Project Schema &gt; 1.4 Trigger Data &gt; warns on broken object reference in trigger source" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/project.test.ts" name="Project Schema &gt; 1.4 Trigger Data &gt; parses all 35 known event types" time="0.001">
+        </testcase>
+        <testcase classname="tests/schemas/project.test.ts" name="Project Schema &gt; 1.4 Trigger Data &gt; parses all 40 known action types" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/project.test.ts" name="Project Schema &gt; 1.5 Variable Data &gt; parses a variable with name, type, and initialValue" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/project.test.ts" name="Project Schema &gt; 1.5 Variable Data &gt; parses variable with scope (project/scene/slide)" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/project.test.ts" name="Project Schema &gt; 1.5 Variable Data &gt; parses system variable reference" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/project.test.ts" name="Project Schema &gt; 1.5 Variable Data &gt; rejects invalid variable type" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/project.test.ts" name="Project Schema &gt; 1.5 Variable Data &gt; parses all 8 variable types" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/project.test.ts" name="Project Schema &gt; Version Fields &gt; accepts valid schemaVersion format (semver)" time="0.001">
+        </testcase>
+        <testcase classname="tests/schemas/project.test.ts" name="Project Schema &gt; Version Fields &gt; rejects invalid schemaVersion" time="0">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/schemas/slide.test.ts" timestamp="2026-04-06T15:02:10.819Z" hostname="Johns-Mac-mini.local" tests="21" failures="0" errors="0" skipped="0" time="0.003">
+        <testcase classname="tests/schemas/slide.test.ts" name="Slide Schema &gt; Background types &gt; accepts solid background" time="0.001">
+        </testcase>
+        <testcase classname="tests/schemas/slide.test.ts" name="Slide Schema &gt; Background types &gt; accepts gradient background" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/slide.test.ts" name="Slide Schema &gt; Background types &gt; accepts image background" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/slide.test.ts" name="Slide Schema &gt; Background types &gt; accepts video background" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/slide.test.ts" name="Slide Schema &gt; Background types &gt; rejects invalid background type" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/slide.test.ts" name="Slide Schema &gt; All object types &gt; accepts &quot;text&quot; object type" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/slide.test.ts" name="Slide Schema &gt; All object types &gt; accepts &quot;button&quot; object type" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/slide.test.ts" name="Slide Schema &gt; All object types &gt; accepts &quot;shape&quot; object type" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/slide.test.ts" name="Slide Schema &gt; All object types &gt; accepts &quot;image&quot; object type" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/slide.test.ts" name="Slide Schema &gt; All object types &gt; accepts &quot;video&quot; object type" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/slide.test.ts" name="Slide Schema &gt; All object types &gt; accepts &quot;audio&quot; object type" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/slide.test.ts" name="Slide Schema &gt; All object types &gt; accepts &quot;hotspot&quot; object type" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/slide.test.ts" name="Slide Schema &gt; All object types &gt; accepts &quot;drag-drop&quot; object type" time="0.001">
+        </testcase>
+        <testcase classname="tests/schemas/slide.test.ts" name="Slide Schema &gt; All object types &gt; accepts &quot;slider&quot; object type" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/slide.test.ts" name="Slide Schema &gt; All object types &gt; accepts &quot;text-entry&quot; object type" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/slide.test.ts" name="Slide Schema &gt; All object types &gt; accepts &quot;result&quot; object type" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/slide.test.ts" name="Slide Schema &gt; All object types &gt; accepts &quot;character&quot; object type" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/slide.test.ts" name="Slide Schema &gt; Layers &gt; parses a feedback layer" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/slide.test.ts" name="Slide Schema &gt; Slides with triggers &gt; parses a trigger on the slide itself" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/slide.test.ts" name="Slide Schema &gt; Slides with triggers &gt; parses multiple triggers" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/slide.test.ts" name="Slide Schema &gt; Audio &gt; parses audio with id, src, volume and loop" time="0">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/schemas/trigger.test.ts" timestamp="2026-04-06T15:02:10.821Z" hostname="Johns-Mac-mini.local" tests="113" failures="0" errors="0" skipped="0" time="0.005">
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event type &quot;userClick&quot;" time="0.001">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event type &quot;timelineStarts&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event type &quot;timelineEnds&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event type &quot;mediaEnds&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event type &quot;mediaStarts&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event type &quot;variableChanges&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event type &quot;questionSubmitted&quot;" time="0.001">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event type &quot;sliderMoves&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event type &quot;dragDropComplete&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event type &quot;courseStarts&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event type &quot;courseEnds&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event type &quot;resultsCalculated&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event type &quot;mouseEnter&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event type &quot;mouseExit&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event type &quot;focus&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event type &quot;blur&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event type &quot;keyPress&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event type &quot;timelinePaused&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event type &quot;timelineResumed&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event type &quot;mediaPaused&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event type &quot;mediaSeeking&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event type &quot;attemptStarted&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event type &quot;attemptSubmitted&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event type &quot;attemptReviewed&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event type &quot;formSubmitted&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event type &quot;scrollIntoView&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event type &quot;animationComplete&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event type &quot;audioEnds&quot;" time="0.001">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event type &quot;videoEnds&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event type &quot;quizPassed&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event type &quot;quizFailed&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event type &quot;surveyCompleted&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event type &quot;linkClicked&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event type &quot;buttonPressed&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event type &quot;dropdownChanged&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event type &quot;checkboxChanged&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event type &quot;radioChanged&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event type &quot;timerExpired&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event type &quot;visitedSlides&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event type &quot;visitedObjects&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; warns on completely unknown event type (forward-compat)" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Events &gt; parses event with optional source field" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;jumpToSlide&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;showLayer&quot;" time="0.001">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;hideLayer&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;setVariable&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;adjustVariable&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;playMedia&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;pauseMedia&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;startTimeline&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;pauseTimeline&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;submitQuiz&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;exitCourse&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;fireXAPIStatement&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;conditional&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;delay&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;stopMedia&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;seekMedia&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;showObject&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;hideObject&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;enableObject&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;disableObject&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;toggleObject&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;animateObject&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;setFocus&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;scrollToObject&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;showTooltip&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;playAnimation&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;stopAnimation&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;sendEmail&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;openURL&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;showModal&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;closeModal&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;showFeedback&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;hideFeedback&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;incrementCounter&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;decrementCounter&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;resetVariable&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;resetQuiz&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;resetSlide&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;goBack&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;goForward&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;showNavigation&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;hideNavigation&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;lockNavigation&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;unlockNavigation&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;setSlideBackground&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;loadScene&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;executeJavaScript&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;waitForInteraction&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;showCaption&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; parses action type &quot;hideCaption&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Actions &gt; warns on unknown action type (forward-compat)" time="0.001">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Conditions &gt; parses condition type &quot;variableEquals&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Conditions &gt; parses condition type &quot;variableNotEquals&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Conditions &gt; parses condition type &quot;variableGreaterThan&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Conditions &gt; parses condition type &quot;variableLessThan&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Conditions &gt; parses condition type &quot;variableContains&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Conditions &gt; parses condition type &quot;variableIsEmpty&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Conditions &gt; parses condition type &quot;mediaPlayed&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Conditions &gt; parses condition type &quot;slideVisited&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Conditions &gt; parses condition type &quot;attemptCount&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Conditions &gt; parses condition type &quot;scoreRange&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Conditions &gt; parses condition type &quot;and&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Conditions &gt; parses condition type &quot;or&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Conditions &gt; parses condition type &quot;not&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Trigger Conditions &gt; parses conditional action with branches" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Required fields &gt; rejects a trigger missing id" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Required fields &gt; rejects a trigger missing event" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Required fields &gt; rejects a trigger missing action" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Optional fields &gt; accepts optional description field" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Optional fields &gt; accepts optional priority field" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/trigger.test.ts" name="Trigger Schema &gt; Optional fields &gt; accepts disabled trigger" time="0">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/schemas/variable.test.ts" timestamp="2026-04-06T15:02:10.828Z" hostname="Johns-Mac-mini.local" tests="23" failures="0" errors="0" skipped="0" time="0.003">
+        <testcase classname="tests/schemas/variable.test.ts" name="Variable Schema &gt; 8 Variable Types &gt; parses type &quot;trueFalse&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/variable.test.ts" name="Variable Schema &gt; 8 Variable Types &gt; parses type &quot;boolean&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/variable.test.ts" name="Variable Schema &gt; 8 Variable Types &gt; parses type &quot;number&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/variable.test.ts" name="Variable Schema &gt; 8 Variable Types &gt; parses type &quot;text&quot;" time="0.001">
+        </testcase>
+        <testcase classname="tests/schemas/variable.test.ts" name="Variable Schema &gt; 8 Variable Types &gt; parses type &quot;slider&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/variable.test.ts" name="Variable Schema &gt; 8 Variable Types &gt; parses type &quot;sequence&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/variable.test.ts" name="Variable Schema &gt; 8 Variable Types &gt; parses type &quot;date&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/variable.test.ts" name="Variable Schema &gt; 8 Variable Types &gt; parses type &quot;math&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/variable.test.ts" name="Variable Schema &gt; 8 Variable Types &gt; rejects unknown variable type" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/variable.test.ts" name="Variable Schema &gt; 4 Scope Levels &gt; parses scope &quot;course&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/variable.test.ts" name="Variable Schema &gt; 4 Scope Levels &gt; parses scope &quot;scene&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/variable.test.ts" name="Variable Schema &gt; 4 Scope Levels &gt; parses scope &quot;quiz&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/variable.test.ts" name="Variable Schema &gt; 4 Scope Levels &gt; parses scope &quot;slide&quot;" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/variable.test.ts" name="Variable Schema &gt; 4 Scope Levels &gt; defaults scope to &quot;course&quot; when omitted" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/variable.test.ts" name="Variable Schema &gt; Variable Fields &gt; parses variable with numeric min/max" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/variable.test.ts" name="Variable Schema &gt; Variable Fields &gt; parses text variable with maxLength" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/variable.test.ts" name="Variable Schema &gt; Variable Fields &gt; parses text variable with validValues enum" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/variable.test.ts" name="Variable Schema &gt; Variable Fields &gt; parses variable with LMS mapping" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/variable.test.ts" name="Variable Schema &gt; Variable Fields &gt; parses course-scoped variable with persistAcrossSessions" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/variable.test.ts" name="Variable Schema &gt; Variable Fields &gt; parses variable with description and tags" time="0.001">
+        </testcase>
+        <testcase classname="tests/schemas/variable.test.ts" name="Variable Schema &gt; Variable Fields &gt; rejects invalid LMS standard" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/variable.test.ts" name="Variable Schema &gt; Required fields &gt; rejects variable missing type" time="0">
+        </testcase>
+        <testcase classname="tests/schemas/variable.test.ts" name="Variable Schema &gt; Required fields &gt; rejects variable missing defaultValue" time="0">
+        </testcase>
+    </testsuite>
+</testsuites>

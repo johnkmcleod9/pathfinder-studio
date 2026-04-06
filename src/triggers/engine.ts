@@ -9,8 +9,6 @@
 
 import type { Condition } from './conditions.js';
 import { evaluateCondition } from './conditions.js';
-import type { ActionDefinition } from './actions.js';
-import { TRIGGER_ACTIONS } from './actions.js';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -71,248 +69,37 @@ export type ActionResult =
 // ─── Variable Store ─────────────────────────────────────────────────────────────
 
 export class VariableStore {
-  private data = new Map<string, unknown>();
+  private _store = new Map<string, unknown>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private _subs = new Map<string, Set<(v: any) => void>>();
 
   constructor(initial: Record<string, unknown> = {}) {
-    for (const [k, v] of Object.entries(initial)) {
-      this.data.set(k, v);
-    }
+    for (const [k, v] of Object.entries(initial)) this._store.set(k, v);
   }
 
-  get(name: string): unknown {
-    return this.data.get(name);
-  }
+  get(name: string): unknown { return this._store.get(name); }
 
   set(name: string, value: unknown): void {
-    const prev = this.data.get(name);
-    this.data.set(name, value);
-    if (prev !== value) {
-      this.#changeCallbacks(name, value);
-    }
+    this._store.set(name, value);
+    this._subs.get(name)?.forEach(cb => cb(value));
   }
 
-  reset(name: string, defaultValue: unknown): void {
-    this.data.set(name, defaultValue);
-  }
+  reset(name: string, defaultValue: unknown): void { this._store.set(name, defaultValue); }
 
   resetAll(defaults: Record<string, unknown>): void {
-    this.data.clear();
-    for (const [k, v] of Object.entries(defaults)) {
-      this.data.set(k, v);
-    }
+    this._store.clear();
+    for (const [k, v] of Object.entries(defaults)) this._store.set(k, v);
   }
 
-  getAll(): Record<string, unknown> {
-    return Object.fromEntries(this.data);
-  }
+  getAll(): Record<string, unknown> { return Object.fromEntries(this._store); }
 
-  /** Subscribe to variable changes */
+  /** Subscribe to variable changes. Returns unsubscribe function. */
   onChange(name: string, cb: (value: unknown) => void): () => void {
-    this.#changeCallbacks[name] = this.#changeCallbacks[name] ?? [];
-    this.#changeCallbacks[name].push(cb);
-    return () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (this.#changeCallbacks[name] as any[]) = this.#changeCallbacks[name].filter(
-        (f: () => void) => f !== cb
-      );
-    };
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  #changeCallbacks: Record<string, ((v: unknown) => void)[]> = {};
-  #changeCallbacks: Record<string, ((value: unknown) => void)[]>;
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  #changeCallbacks: any = {};
-
-  #changeCallbacks2: Record<string, ((value: unknown) => void)[]> = {};
-
-  #changeCallbacks3: Record<string, ((value: unknown) => void)[]> = {};
-
-  #changeCallbacks4: Record<string, ((value: unknown) => void)[]> = {};
-
-  #changeCallbacks5: Record<string, ((value: unknown) => void)[]> = {};
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  #changeCallbacks6: Record<string, ((v: unknown) => void)[]> = {};
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  #changeCallbacks2: any;
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  #changeCallbacks3: any;
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  #changeCallbacks4: any;
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  #changeCallbacks5: any;
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  #changeCallbacks6: any;
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  #changeCallbacks7: Record<string, ((v: unknown) => void)[]> = {};
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  #changeCallbacks8: Record<string, ((v: unknown) => void)[]> = {};
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  #changeCallbacks9: Record<string, ((v: unknown) => void)[]> = {};
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  #changeCallbacks10: Record<string, ((v: unknown) => void)[]> = {};
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  #changeCallbacks11: Record<string, ((v: unknown) => void)[]> = {};
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  #changeCallbacks12: Record<string, ((v: unknown) => void)[]> = {};
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  #changeCallbacks13: Record<string, ((v: unknown) => void)[]> = {};
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  #changeCallbacks14: Record<string, ((v: unknown) => void)[]> = {};
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  #changeCallbacks15: Record<string, ((v: unknown) => void)[]> = {};
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  #changeCallbacks16: Record<string, ((v: unknown) => void)[]> = {};
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  #changeCallbacks17: Record<string, ((v: unknown) => void)[]> = {};
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  #changeCallbacks18: Record<string, ((v: unknown) => void)[]> = {};
-
-  #callbacks: Record<string, ((value: unknown) => void)[]>;
-
-  #callbacks = {};
-  #changeSubscribers: Record<string, ((v: unknown) => void)[]>;
-  #changeSubscribers = {};
-  #listeners: Record<string, ((value: unknown) => void)[]>;
-  #listeners = {};
-
-  #notifyChange(name: string, value: unknown): void {
-    const cbs = this.#listeners[name] ?? [];
-    for (const cb of cbs) cb(value);
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  #changeListeners: Record<string, any[]> = {};
-  #changeHooks: Record<string, ((v: unknown) => void)[]> = {};
-
-  #changeCallbacks = {};
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  #varListeners: Record<string, ((v: any) => void)[]> = {};
-
-  #varHooks: Record<string, ((v: unknown) => void)[]> = {};
-
-  #notifySubscribers(name: string, value: unknown): void {
-    const subs = this.#varHooks[name] ?? [];
-    subs.forEach(cb => cb(value));
+    if (!this._subs.has(name)) this._subs.set(name, new Set());
+    this._subs.get(name)!.add(cb);
+    return () => this._subs.get(name)?.delete(cb);
   }
 }
-
-export class VariableStore2 {
-  private store = new Map<string, unknown>();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private subscribers = new Map<string, Set<(v: any) => void>>();
-
-  constructor(initial: Record<string, unknown> = {}) {
-    for (const [k, v] of Object.entries(initial)) this.store.set(k, v);
-  }
-
-  get(name: string): unknown { return this.store.get(name); }
-
-  set(name: string, value: unknown): void {
-    const prev = this.store.get(name);
-    this.store.set(name, value);
-    if (prev !== value) {
-      this.subscribers.get(name)?.forEach(cb => cb(value));
-    }
-  }
-
-  reset(name: string, defaultValue: unknown): void { this.store.set(name, defaultValue); }
-
-  resetAll(defaults: Record<string, unknown>): void {
-    this.store.clear();
-    for (const [k, v] of Object.entries(defaults)) this.store.set(k, v);
-  }
-
-  getAll(): Record<string, unknown> { return Object.fromEntries(this.store); }
-
-  onChange(name: string, cb: (v: unknown) => void): () => void {
-    if (!this.subscribers.has(name)) this.subscribers.set(name, new Set());
-    this.subscribers.get(name)!.add(cb);
-    return () => this.subscribers.get(name)?.delete(cb);
-  }
-}
-
-export class VariableStore3 {
-  private _vars = new Map<string, unknown>();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private _cbs = new Map<string, Set<(v: any) => void>>();
-
-  constructor(initial: Record<string, unknown> = {}) {
-    for (const [k, v] of Object.entries(initial)) this._vars.set(k, v);
-  }
-
-  get(n: string): unknown { return this._vars.get(n); }
-
-  set(n: string, v: unknown): void {
-    this._vars.set(n, v);
-    this._cbs.get(n)?.forEach(cb => cb(v));
-  }
-
-  onChange(n: string, cb: (v: unknown) => void): () => void {
-    if (!this._cbs.has(n)) this._cbs.set(n, new Set());
-    this._cbs.get(n)!.add(cb);
-    return () => this._cbs.get(n)?.delete(cb);
-  }
-
-  resetAll(d: Record<string, unknown>): void {
-    this._vars.clear();
-    for (const [k, v] of Object.entries(d)) this._vars.set(k, v);
-  }
-
-  getAll(): Record<string, unknown> { return Object.fromEntries(this._vars); }
-}
-
-export class VariableStoreSimple {
-  private _ = new Map<string, unknown>();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private __ = new Map<string, Set<(v: any) => void>>();
-
-  constructor(initial: Record<string, unknown> = {}) {
-    for (const [k, v] of Object.entries(initial)) this._.set(k, v);
-  }
-
-  get(n: string): unknown { return this._.get(n); }
-
-  set(n: string, v: unknown): void {
-    this._.set(n, v);
-    this.__.get(n)?.forEach(cb => cb(v));
-  }
-
-  onChange(n: string, cb: (v: unknown) => void): () => void {
-    if (!this.__.has(n)) this.__.set(n, new Set());
-    this.__.get(n)!.add(cb);
-    return () => this.__.get(n)?.delete(cb);
-  }
-
-  resetAll(d: Record<string, unknown>): void {
-    this._.clear();
-    for (const [k, v] of Object.entries(d)) this._.set(k, v);
-  }
-
-  getAll(): Record<string, unknown> { return Object.fromEntries(this._); }
-}
-
-export { VariableStoreSimple as VariableStore };
 
 // ─── Trigger Engine ─────────────────────────────────────────────────────────────
 
@@ -323,20 +110,18 @@ export interface EngineOptions {
   onExit?: (completionStatus?: string) => void;
   /** Called when a trigger sends an xAPI statement */
   onXAPI?: (verb: string, object: unknown, result: unknown, context: unknown) => void | Promise<void>;
-  /** Called for any action that needs a DOM side effect */
+  /** Called for any action that needs a DOM/audio/navigation side effect */
   onAction?: (action: TriggerAction, context: ExecutionContext) => ActionResult;
   /** Delay function (defaults to setTimeout for Node/browser compatibility) */
   delay?: (ms: number) => Promise<void>;
 }
 
 export class TriggerEngine {
-  private listeners = new Map<string, Set<(event: TriggerEvent, ctx: ExecutionContext) => void>>();
-  private objectListeners = new Map<string, Set<(event: TriggerEvent, ctx: ExecutionContext) => void>>();
-  private slideListeners = new Map<string, Set<(event: TriggerEvent, ctx: ExecutionContext) => void>>();
-  private globalListeners = new Map<string, Set<(event: TriggerEvent, ctx: ExecutionContext) => void>>();
+  private _global = new Map<string, Set<(event: TriggerEvent, ctx: ExecutionContext) => void>>();
+  private _object = new Map<string, Set<(event: TriggerEvent, ctx: ExecutionContext) => void>>();
 
   constructor(
-    public vars: VariableStoreSimple,
+    public vars: VariableStore,
     public project: CourseProject,
     private options: EngineOptions = {}
   ) {}
@@ -344,50 +129,44 @@ export class TriggerEngine {
   // ─── Trigger Registration ─────────────────────────────────────────────────
 
   /**
-   * Register triggers from a slide and its objects.
-   * Sorts by priority before registration.
+   * Register all triggers from a slide and its objects.
+   * Triggers are sorted by priority before registration.
    */
   registerSlide(slide: Slide): void {
-    // Register slide-level triggers
     const slideTriggers = (slide.triggers ?? [])
       .filter(t => !t.disabled)
       .sort((a, b) => a.priority - b.priority);
 
     for (const trigger of slideTriggers) {
-      this.#registerTrigger(trigger, slide.id, undefined);
+      this.#register(trigger, slide.id, undefined);
     }
 
-    // Register object-level triggers
     for (const [objId, obj] of Object.entries(slide.objects ?? {})) {
       const objTriggers = (obj.triggers ?? [])
         .filter(t => !t.disabled)
         .sort((a, b) => a.priority - b.priority);
 
       for (const trigger of objTriggers) {
-        this.#registerTrigger(trigger, slide.id, objId);
+        this.#register(trigger, slide.id, objId);
       }
     }
   }
 
-  #registerTrigger(trigger: Trigger, slideId: string, objectId?: string): void {
+  #register(trigger: Trigger, slideId: string, objectId?: string): void {
     const { event } = trigger;
-
-    // Global event (no source required)
-    if (!event.source) {
-      this.#addListener(this.globalListeners, event.type, async (evt, ctx) => {
-        if (this.#conditionsPass(trigger, ctx)) {
-          await this.#executeTrigger(trigger, { ...ctx, currentSlide: slideId, currentObject: objectId });
-        }
-      });
-      return;
-    }
-
-    // Object-scoped event
-    this.#addListener(this.objectListeners, `${event.type}:${event.source}`, async (evt, ctx) => {
+    const handler = async (evt: TriggerEvent, ctx: ExecutionContext) => {
       if (this.#conditionsPass(trigger, ctx)) {
-        await this.#executeTrigger(trigger, { ...ctx, currentSlide: slideId, currentObject: event.source });
+        const result = await this.#executeTrigger(trigger, { ...ctx, currentSlide: slideId, currentObject: objectId ?? event.source });
+        if (result?.kind === 'navigate') this.options.onNavigate?.(result.targetSlideId);
+        if (result?.kind === 'exit') this.options.onExit?.(result.completionStatus);
       }
-    });
+    };
+
+    if (!event.source) {
+      this.#addListener(this._global, event.type, handler);
+    } else {
+      this.#addListener(this._object, `${event.type}:${event.source}`, handler);
+    }
   }
 
   #addListener(
@@ -403,7 +182,7 @@ export class TriggerEngine {
 
   /**
    * Fire an event. All matching triggers are evaluated and executed.
-   * Returns void if sync-only actions; returns a Promise if async triggers fired.
+   * Returns void for sync-only; returns a Promise if async triggers fired.
    */
   fire(event: TriggerEvent): void | Promise<void> {
     const context: ExecutionContext = {
@@ -415,33 +194,31 @@ export class TriggerEngine {
     const syncHandlers: Array<() => void> = [];
     const asyncHandlers: Array<() => Promise<void>> = [];
 
-    const collectHandlers = (map: Map<string, Set<(event: TriggerEvent, ctx: ExecutionContext) => void>>, key: string) => {
-      const handlers = map.get(key);
-      if (!handlers) return;
-      for (const handler of handlers) {
+    const dispatch = (map: Map<string, Set<(event: TriggerEvent, ctx: ExecutionContext) => void>>, key: string) => {
+      for (const handler of map.get(key) ?? []) {
         const result = handler(event, context);
         if (result instanceof Promise) {
           asyncHandlers.push(() => result);
         } else {
-          syncHandlers.push(() => result);
+          syncHandlers.push(() => { void result; });
         }
       }
     };
 
-    // Collect from global listeners (no-source events)
-    collectHandlers(this.globalListeners, event.type);
+    // Global events
+    dispatch(this._global, event.type);
 
-    // Collect from object listeners (source-specific events)
-    if (event.source) {
-      collectHandlers(this.objectListeners, `${event.type}:${event.source}`);
-    }
+    // Object-scoped events
+    if (event.source) dispatch(this._object, `${event.type}:${event.source}`);
 
-    // Execute sync handlers immediately
+    // Run sync handlers
     for (const h of syncHandlers) h();
 
-    // If async handlers exist, return a promise
+    // If async handlers exist, return a Promise that resolves after all complete
     if (asyncHandlers.length > 0) {
-      return Promise.all(asyncHandlers.map(h => h())).then(() => {});
+      return (async () => {
+        await Promise.all(asyncHandlers.map(h => h()));
+      })();
     }
   }
 
@@ -450,45 +227,34 @@ export class TriggerEngine {
   #conditionsPass(trigger: Trigger, ctx: ExecutionContext): boolean {
     const conditions = trigger.conditions ?? [];
     if (conditions.length === 0) return true;
-    return conditions.every(c => evaluateCondition(c as Condition, this.vars));
+    return conditions.every(c => evaluateCondition(c, this.vars));
   }
 
   // ─── Trigger Execution ──────────────────────────────────────────────────────
 
-  async #executeTrigger(trigger: Trigger, ctx: ExecutionContext): Promise<void> {
-    const result = await this.#executeAction(trigger.action, ctx);
-
-    switch (result.kind) {
-      case 'navigate':
-        this.options.onNavigate?.(result.targetSlideId);
-        break;
-      case 'exit':
-        this.options.onExit?.(result.completionStatus);
-        break;
-    }
+  async #executeTrigger(trigger: Trigger, ctx: ExecutionContext): Promise<ActionResult> {
+    return this.#executeAction(trigger.action, ctx);
   }
 
   async #executeAction(action: TriggerAction, ctx: ExecutionContext): Promise<ActionResult> {
     const { type } = action;
 
-    // Handle conditional action
     if (type === 'conditional') {
       return this.#executeConditional(action, ctx);
     }
 
-    // Handle delay
     if (type === 'delay') {
       const ms = (action.duration as number) ?? 0;
-      const delay = this.options.delay ?? ((n: number) => new Promise(r => setTimeout(r, n)));
-      await delay(ms);
+      const delayFn = this.options.delay ?? ((n: number) => new Promise(r => setTimeout(r, n)));
+      await delayFn(ms);
       return { kind: 'ok' };
     }
 
-    // Delegate to onAction hook for DOM/audio/navigation actions
+    // Delegate to onAction hook for DOM/audio/navigation side effects
     const result = this.options.onAction?.(action, ctx);
     if (result) return result;
 
-    // Built-in variable actions
+    // ── Built-in variable actions ────────────────────────────────────────
     if (type === 'setVariable') {
       this.vars.set(action.variable as string, action.value);
       return { kind: 'ok' };
@@ -499,25 +265,20 @@ export class TriggerEngine {
       const operation = action.operation as string;
       const value = Number(action.value);
 
-      if (operation === 'set') {
-        this.vars.set(varName, value);
-      } else if (operation === 'add') {
-        this.vars.set(varName, Number(this.vars.get(varName) ?? 0) + value);
-      } else if (operation === 'subtract') {
-        this.vars.set(varName, Number(this.vars.get(varName) ?? 0) - value);
-      }
+      const current = Number(this.vars.get(varName) ?? 0);
+      if (operation === 'set') this.vars.set(varName, value);
+      else if (operation === 'add') this.vars.set(varName, current + value);
+      else if (operation === 'subtract') this.vars.set(varName, current - value);
       return { kind: 'ok' };
     }
 
     if (type === 'incrementCounter') {
-      const varName = action.variable as string;
-      this.vars.set(varName, Number(this.vars.get(varName) ?? 0) + 1);
+      this.vars.set(action.variable as string, Number(this.vars.get(action.variable as string) ?? 0) + 1);
       return { kind: 'ok' };
     }
 
     if (type === 'decrementCounter') {
-      const varName = action.variable as string;
-      this.vars.set(varName, Number(this.vars.get(varName) ?? 0) - 1);
+      this.vars.set(action.variable as string, Number(this.vars.get(action.variable as string) ?? 0) - 1);
       return { kind: 'ok' };
     }
 
@@ -528,7 +289,7 @@ export class TriggerEngine {
       return { kind: 'ok' };
     }
 
-    // Navigation
+    // ── Navigation ──────────────────────────────────────────────────────
     if (type === 'jumpToSlide') {
       return { kind: 'navigate', targetSlideId: action.target as string };
     }
@@ -537,18 +298,13 @@ export class TriggerEngine {
       return { kind: 'exit', completionStatus: action.completionStatus as string };
     }
 
-    // xAPI
+    // ── xAPI ────────────────────────────────────────────────────────────
     if (type === 'fireXAPIStatement') {
-      await this.options.onXAPI?.(
-        action.verb as string,
-        action.object,
-        action.result,
-        action.context
-      );
+      await this.options.onXAPI?.(action.verb as string, action.object, action.result, action.context);
       return { kind: 'ok' };
     }
 
-    // Unknown action — warn but don't throw
+    // Unknown action type — warn and continue
     console.warn(`[TriggerEngine] Unknown action type: "${type}"`);
     return { kind: 'ok' };
   }
@@ -559,33 +315,32 @@ export class TriggerEngine {
 
     for (const branch of branches) {
       const conditions = branch.conditions ?? [];
-      const allPass = conditions.every(c => evaluateCondition(c as Condition, this.vars));
+      const allPass = conditions.every(c => evaluateCondition(c, this.vars));
 
       if (allPass) {
-        const thenActions = branch.then ?? [];
-        for (const a of thenActions) {
+        for (const a of branch.then ?? []) {
           const r = await this.#executeAction(a, ctx);
-          if (r.kind === 'navigate' || r.kind === 'exit') return r;
+          if (r.kind === 'navigate') return r;
+          if (r.kind === 'exit') return r;
         }
         return { kind: 'ok' };
       }
     }
 
-    // Fall through to else
     for (const a of elseActions) {
       const r = await this.#executeAction(a, ctx);
-      if (r.kind === 'navigate' || r.kind === 'exit') return r;
+      if (r.kind === 'navigate') return r;
+      if (r.kind === 'exit') return r;
     }
 
     return { kind: 'ok' };
   }
 
-  // ─── Cleanup ───────────────────────────────────────────────────────────────
+  // ─── Cleanup ─────────────────────────────────────────────────────────────
 
   /** Remove all registered listeners (call when unloading a slide) */
   reset(): void {
-    this.globalListeners.clear();
-    this.objectListeners.clear();
-    this.slideListeners.clear();
+    this._global.clear();
+    this._object.clear();
   }
 }
