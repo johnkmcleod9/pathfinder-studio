@@ -581,11 +581,16 @@ function toRuntimeVariables(vars: VariableIR[]): Record<string, RuntimeVariable>
   for (const v of vars) {
     const type: RuntimeVariable['type'] =
       v.type === 'trueFalse' ? 'boolean' : v.type === 'number' ? 'number' : 'text';
-    result[v.name] = {
+    const out: RuntimeVariable = {
       type,
       default: v.defaultValue,
       scope: v.scope,
     };
+    // Only emit LMS fields when the author opted in. Keeps course.json
+    // small for the common no-LMS-binding case.
+    if (v.exportToLMS) out.exportToLMS = true;
+    if (v.lmsMapping) out.lmsMapping = v.lmsMapping;
+    result[v.name] = out;
   }
   return result;
 }

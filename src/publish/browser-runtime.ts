@@ -193,12 +193,40 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
   PathfinderRuntime.prototype.setVariable = function(name, value) {
     var prev = this.variables[name];
     this.variables[name] = value;
+    if (prev !== value) {
+      this._pushVarToLms(name, value);
+    }
     this.saveProgress();
     // Variable change may flip an object's conditional visibility.
     // Cheap correctness win: re-render whenever a value actually
     // changed. (No-op when the same value is re-set.)
     if (prev !== value && this.currentSlideEl) {
       this._renderCurrentSlide();
+    }
+  };
+
+  // Push a single variable value to the LMS gradebook when the
+  // course author has opted in (exportToLMS=true + lmsMapping.key).
+  // No-ops gracefully when adapter is missing or lacks SetValue.
+  PathfinderRuntime.prototype._pushVarToLms = function(name, value) {
+    var vars = this.course.variables || {};
+    var def = vars[name];
+    if (!def || !def.exportToLMS) return;
+    if (!def.lmsMapping || !def.lmsMapping.key) return;
+    if (!this.lmsAdapter || typeof this.lmsAdapter.SetValue !== 'function') return;
+
+    // SCORM data model values are strings — coerce via String() so
+    // booleans become 'true'/'false' and numbers become decimal strings.
+    var serialized = (value === null || value === undefined) ? '' : String(value);
+    try {
+      this.lmsAdapter.SetValue(def.lmsMapping.key, serialized);
+      if (typeof this.lmsAdapter.Commit === 'function') {
+        this.lmsAdapter.Commit('');
+      }
+    } catch (e) {
+      if (typeof console !== 'undefined' && console.warn) {
+        console.warn('[PathfinderRuntime] LMS push failed for ' + name + ':', e);
+      }
     }
   };
 

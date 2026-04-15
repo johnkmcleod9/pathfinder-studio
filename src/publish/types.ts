@@ -424,6 +424,13 @@ export interface RuntimeVariable {
   type: 'boolean' | 'number' | 'text';
   default: unknown;
   scope: 'course' | 'slide' | 'local';
+  /** When true and lmsMapping.key is set, the runtime pushes value
+   * changes to the LMS via lmsAdapter.SetValue + Commit. */
+  exportToLMS?: boolean;
+  lmsMapping?: {
+    standard: 'scorm2004' | 'scorm12';
+    key: string;
+  };
 }
 
 export interface RuntimeNavigation {

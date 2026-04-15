@@ -395,6 +395,46 @@ describe('compileTrigger / toRuntimeTrigger — conditions propagation', () => {
   });
 });
 
+describe('toRuntimeVariables — exportToLMS / lmsMapping propagation', () => {
+  function projectWithVar(varDef: Record<string, unknown>): Record<string, unknown> {
+    return {
+      metadata: { id: 'p', title: 'P', author: 'A', language: 'en' },
+      slides: [{ id: 's1', title: 'S', background: { type: 'solid', color: '#FFF' }, objects: {}, zOrder: [], triggers: [] }],
+      variables: { Score: varDef },
+      navigation: { entrySlide: 's1', slides: ['s1'], showNavigationArrows: false },
+    };
+  }
+
+  it('omits exportToLMS / lmsMapping when defaults / unset', () => {
+    const ir = compileCourseIR(
+      projectWithVar({ type: 'number', defaultValue: 0, scope: 'course' }),
+      { version: '1.0', assets: {} }
+    );
+    const rc = buildRuntimeCourse(ir, { standard: 'html5' });
+    const v = rc.variables.Score as { exportToLMS?: boolean; lmsMapping?: unknown };
+    expect(v.exportToLMS).toBeUndefined();
+    expect(v.lmsMapping).toBeUndefined();
+  });
+
+  it('propagates exportToLMS=true and lmsMapping through buildRuntimeCourse', () => {
+    const ir = compileCourseIR(
+      projectWithVar({
+        type: 'number', defaultValue: 0, scope: 'course',
+        exportToLMS: true,
+        lmsMapping: { standard: 'scorm12', key: 'cmi.core.score.raw' },
+      }),
+      { version: '1.0', assets: {} }
+    );
+    const rc = buildRuntimeCourse(ir, { standard: 'scorm12' });
+    const v = rc.variables.Score as {
+      exportToLMS?: boolean;
+      lmsMapping?: { standard: string; key: string };
+    };
+    expect(v.exportToLMS).toBe(true);
+    expect(v.lmsMapping).toEqual({ standard: 'scorm12', key: 'cmi.core.score.raw' });
+  });
+});
+
 describe('compileObject — visibility propagation', () => {
   function projectWithObjVisibility(visibility: unknown): Record<string, unknown> {
     const objWithVis: Record<string, unknown> = {
