@@ -379,6 +379,15 @@ export interface RuntimeObject {
   style?: Record<string, unknown>;
   states?: Record<string, Record<string, unknown>>;
   interactions?: RuntimeInteraction[];
+  visibility?: RuntimeVisibility;
+}
+
+export interface RuntimeVisibility {
+  initial: 'visible' | 'hidden';
+  conditional: Array<{
+    conditions: ConditionIR[];
+    then: 'visible' | 'hidden';
+  }>;
 }
 
 export interface RuntimeBackground {

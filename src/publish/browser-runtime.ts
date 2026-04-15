@@ -191,8 +191,15 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
   };
 
   PathfinderRuntime.prototype.setVariable = function(name, value) {
+    var prev = this.variables[name];
     this.variables[name] = value;
     this.saveProgress();
+    // Variable change may flip an object's conditional visibility.
+    // Cheap correctness win: re-render whenever a value actually
+    // changed. (No-op when the same value is re-set.)
+    if (prev !== value && this.currentSlideEl) {
+      this._renderCurrentSlide();
+    }
   };
 
   // ---- Pub/sub ----
@@ -346,6 +353,7 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
 
   PathfinderRuntime.prototype._renderObject = function(obj) {
     if (!obj || !obj.rect) return null;
+    if (!this._isObjectVisible(obj)) return null;
     var x = obj.rect[0], y = obj.rect[1], w = obj.rect[2], h = obj.rect[3];
     var content = this._substitute(obj.content == null ? '' : String(obj.content));
     var el;
@@ -465,6 +473,23 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
       if (!this._evalCondition(conditions[i])) return false;
     }
     return true;
+  };
+
+  // Evaluate object visibility from its declared shape:
+  //   { initial: 'visible'|'hidden', conditional: [{conditions[], then}, ...] }
+  // First matching rule wins; falls back to initial when no rule matches.
+  // Objects with no visibility field are always visible.
+  PathfinderRuntime.prototype._isObjectVisible = function(obj) {
+    var v = obj && obj.visibility;
+    if (!v) return true;
+    var rules = v.conditional || [];
+    for (var i = 0; i < rules.length; i++) {
+      var rule = rules[i];
+      if (this._conditionsPass(rule.conditions)) {
+        return rule.then !== 'hidden';
+      }
+    }
+    return v.initial !== 'hidden';
   };
 
   PathfinderRuntime.prototype._evalCondition = function(cond) {

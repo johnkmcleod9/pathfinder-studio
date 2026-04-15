@@ -394,3 +394,66 @@ describe('compileTrigger / toRuntimeTrigger — conditions propagation', () => {
     expect(rc.slides[0].triggers[0].conditions).toBeUndefined();
   });
 });
+
+describe('compileObject — visibility propagation', () => {
+  function projectWithObjVisibility(visibility: unknown): Record<string, unknown> {
+    const objWithVis: Record<string, unknown> = {
+      type: 'text',
+      rect: { x: 0, y: 0, w: 100, h: 50 },
+      content: 'maybe hidden',
+    };
+    if (visibility !== undefined) objWithVis.visibility = visibility;
+    return {
+      metadata: { id: 'vc', title: 'V', author: 'A', language: 'en' },
+      slides: [{
+        id: 's1', title: 'S',
+        background: { type: 'solid', color: '#FFF' },
+        objects: { obj: objWithVis },
+        zOrder: ['obj'],
+        triggers: [],
+      }],
+      variables: {},
+      navigation: { entrySlide: 's1', slides: ['s1'], showNavigationArrows: false },
+    };
+  }
+
+  it('omits visibility from RuntimeObject when project has no visibility field', () => {
+    const ir = compileCourseIR(projectWithObjVisibility(undefined), { version: '1.0', assets: {} });
+    const rc = buildRuntimeCourse(ir, { standard: 'html5' });
+    const obj = rc.slides[0].objects[0] as { visibility?: unknown };
+    expect(obj.visibility).toBeUndefined();
+  });
+
+  it('preserves legacy `hidden: true` flag as visibility.initial = "hidden"', () => {
+    const project = projectWithObjVisibility(undefined);
+    const slides = project.slides as Array<{ objects: Record<string, Record<string, unknown>> }>;
+    slides[0].objects.obj.hidden = true;
+    const ir = compileCourseIR(project, { version: '1.0', assets: {} });
+    const rc = buildRuntimeCourse(ir, { standard: 'html5' });
+    const obj = rc.slides[0].objects[0] as { visibility?: { initial?: string } };
+    expect(obj.visibility?.initial).toBe('hidden');
+  });
+
+  it('propagates visibility.initial + conditional rules to RuntimeObject', () => {
+    const ir = compileCourseIR(
+      projectWithObjVisibility({
+        initial: 'hidden',
+        conditional: [
+          {
+            conditions: [{ type: 'variableEquals', variable: 'Done', value: true }],
+            then: 'visible',
+          },
+        ],
+      }),
+      { version: '1.0', assets: {} }
+    );
+    const rc = buildRuntimeCourse(ir, { standard: 'html5' });
+    const obj = rc.slides[0].objects[0] as {
+      visibility?: { initial: string; conditional: Array<{ then: string }> };
+    };
+    expect(obj.visibility).toBeDefined();
+    expect(obj.visibility!.initial).toBe('hidden');
+    expect(obj.visibility!.conditional).toHaveLength(1);
+    expect(obj.visibility!.conditional[0].then).toBe('visible');
+  });
+});

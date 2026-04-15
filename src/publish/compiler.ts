@@ -176,10 +176,7 @@ function compileObject(
     style: (raw['style'] as Record<string, unknown> | undefined) ?? undefined,
     src: typeof raw['src'] === 'string' ? (raw['src'] as string) : undefined,
     altText: typeof raw['altText'] === 'string' ? (raw['altText'] as string) : undefined,
-    visibility: {
-      initial: raw['hidden'] === true ? 'hidden' : 'visible',
-      conditional: [],
-    },
+    visibility: compileVisibility(raw),
     states: (raw['states'] as Record<string, Record<string, unknown>> | undefined) ?? undefined,
     interactions: undefined,
   };
@@ -282,6 +279,41 @@ function compileTrigger(raw: JsonRecord, sourceObjectId?: string): ResolvedTrigg
  * the IR (and downstream course.json) free of empty arrays for the
  * common no-conditions case.
  */
+/**
+ * Build the visibility shape for a raw object.  Handles:
+ *   - legacy `hidden: true` flag → initial = 'hidden'
+ *   - explicit `visibility: { initial, conditional[] }`
+ *   - neither (default visible, no conditional rules)
+ *
+ * The IR always carries a VisibilityIR (initial + conditional[]) so
+ * downstream code can read it uniformly. The runtime conversion in
+ * toRuntimeObject() decides whether to emit the field into the final
+ * course.json — most objects don't need it.
+ */
+function compileVisibility(raw: JsonRecord): { initial: 'visible' | 'hidden'; conditional: Array<{ conditions: ConditionIR[]; then: 'visible' | 'hidden' }> } {
+  const v = raw['visibility'] as JsonRecord | undefined;
+  let initial: 'visible' | 'hidden';
+  if (v && (v['initial'] === 'visible' || v['initial'] === 'hidden')) {
+    initial = v['initial'] as 'visible' | 'hidden';
+  } else if (raw['hidden'] === true) {
+    initial = 'hidden';
+  } else {
+    initial = 'visible';
+  }
+
+  const conditional: Array<{ conditions: ConditionIR[]; then: 'visible' | 'hidden' }> = [];
+  const rawRules = v && Array.isArray(v['conditional']) ? (v['conditional'] as JsonRecord[]) : [];
+  for (const rule of rawRules) {
+    if (!rule || typeof rule !== 'object') continue;
+    const conditions = compileConditions(rule['conditions']) ?? [];
+    const then = rule['then'] === 'hidden' ? 'hidden' : 'visible';
+    if (conditions.length === 0) continue; // an empty rule would always match — skip
+    conditional.push({ conditions, then });
+  }
+
+  return { initial, conditional };
+}
+
 function compileConditions(raw: unknown): ConditionIR[] | undefined {
   if (!Array.isArray(raw) || raw.length === 0) return undefined;
   const out: ConditionIR[] = [];
@@ -492,7 +524,7 @@ function toRuntimeSlide(slide: SlideIR): RuntimeSlide {
 }
 
 function toRuntimeObject(obj: ObjectIR): RuntimeObject {
-  return {
+  const out: RuntimeObject = {
     id: obj.id,
     type: obj.type,
     rect: [obj.rect.x, obj.rect.y, obj.rect.w, obj.rect.h],
@@ -507,6 +539,16 @@ function toRuntimeObject(obj: ObjectIR): RuntimeObject {
       correctResponse: i.correctResponse,
     })),
   };
+  // Only emit visibility when it actually constrains rendering — i.e.
+  // initial is hidden, or there's at least one conditional rule. The
+  // common always-visible-no-rules case stays out of course.json.
+  if (obj.visibility.initial === 'hidden' || obj.visibility.conditional.length > 0) {
+    out.visibility = {
+      initial: obj.visibility.initial,
+      conditional: obj.visibility.conditional,
+    };
+  }
+  return out;
 }
 
 function toRuntimeBackground(bg: BackgroundIR): RuntimeBackground {
