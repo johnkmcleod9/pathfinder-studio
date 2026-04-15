@@ -32,6 +32,7 @@ import {
   XAPI_ADAPTER,
 } from './scorm-manifest.js';
 import { BROWSER_RUNTIME } from './browser-runtime.js';
+import { generateTinCanXml } from './tincan.js';
 
 export interface PackagerOptions {
   standard: OutputStandard;
@@ -153,6 +154,44 @@ export async function assemblePackage(
   // --- HTML5-only entry point ---
   if (opts.standard === 'html5') {
     zip.addFile('index.html', Buffer.from(buildHtml5Index(), 'utf-8'));
+  }
+
+  // --- xAPI package descriptor ---
+  if (opts.standard === 'xapi') {
+    // Many LRSes (Watershed, SCORM Cloud, Yet Analytics) read tincan.xml
+    // at the package root to register the activity. Without it the .zip
+    // imports as opaque files and never reports statements.
+    const courseId = course.metadata?.id ?? 'course';
+    // Per the xAPI spec the activity id must be an absolute IRI. If the
+    // course id already looks like a URL, use it; otherwise mint one
+    // under a stable pathfinder.local namespace so LRSes don't reject
+    // the package.
+    const isIri = /^[a-z][a-z0-9+.-]*:/i.test(courseId);
+    const activityId = isIri
+      ? courseId
+      : `https://pathfinder.local/courses/${encodeURIComponent(courseId)}`;
+    const slides = (course.slides ?? []).map((s) => ({
+      id: s.id,
+      title: s.title || s.id,
+    }));
+    zip.addFile(
+      'tincan.xml',
+      Buffer.from(
+        generateTinCanXml({
+          activityId,
+          title: opts.title,
+          launch: 'index.html',
+          description: opts.author ? `Authored by ${opts.author}` : undefined,
+          language: opts.language ?? 'en-US',
+          slides,
+        }),
+        'utf-8'
+      )
+    );
+    // xAPI packages also need a launch entry so an LRS or content host
+    // can open the .zip directly. Mirror the html5 path but include the
+    // xAPI adapter wiring.
+    zip.addFile('index.html', Buffer.from(buildXapiIndex(), 'utf-8'));
   }
 
   // --- Copy media assets ---
@@ -382,6 +421,68 @@ function buildHtml5Index(): string {
         runtime.start();
         runtime.on('slidechange', function(_, idx, total) {
           document.getElementById('slide-counter').textContent = (idx + 1) + ' / ' + total;
+        });
+        document.getElementById('btn-prev').onclick = function() { runtime.navigatePrev(); };
+        document.getElementById('btn-next').onclick = function() { runtime.navigateNext(); };
+      });
+  </script>
+</body>
+</html>`;
+}
+
+function buildXapiIndex(): string {
+  // xAPI launch entry — wires the XAPIAdapter so statements flow to the
+  // configured LRS. The endpoint + auth come from window.PATHFINDER_CONFIG
+  // which the host page (or an LRS launch redirect) is expected to set.
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pathfinder Course</title>
+  <link rel="stylesheet" href="pathfinder-runtime.css">
+  <link rel="stylesheet" href="player/player.css">
+</head>
+<body>
+  <div id="pathfinder-course"></div>
+  <div id="pathfinder-nav">
+    <button id="btn-prev">&#8592; Previous</button>
+    <span id="slide-counter"></span>
+    <button id="btn-next">Next &#8594;</button>
+  </div>
+  <script src="pathfinder-runtime.js"></script>
+  <script src="lms/xapi-adapter.js"></script>
+  <script>
+    var config = window.PATHFINDER_CONFIG || {};
+    var runtime = null;
+    fetch('course.json')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var lmsAdapter = null;
+        if (window.XAPIAdapter) {
+          window.XAPIAdapter.configure({
+            endpoint: config.lrsEndpoint || (data.lms && data.lms.lrsEndpoint) || '',
+            auth: config.lrsAuth || (data.lms && data.lms.lrsAuth) || '',
+            activityId: (data.metadata && data.metadata.id) || 'course'
+          });
+          window.XAPIAdapter.initialized();
+          lmsAdapter = window.XAPIAdapter;
+        }
+        runtime = new PathfinderRuntime({
+          course: data,
+          lmsAdapter: lmsAdapter || {},
+          container: document.getElementById('pathfinder-course')
+        });
+        runtime.start();
+        runtime.on('slidechange', function(slideId, idx, total) {
+          document.getElementById('slide-counter').textContent = (idx + 1) + ' / ' + total;
+          if (window.XAPIAdapter) window.XAPIAdapter.experienced(slideId);
+        });
+        runtime.on('quizcomplete', function(score) {
+          if (window.XAPIAdapter) {
+            if (score.passed) window.XAPIAdapter.passed(score.percent / 100);
+            else window.XAPIAdapter.failed(score.percent / 100);
+          }
         });
         document.getElementById('btn-prev').onclick = function() { runtime.navigatePrev(); };
         document.getElementById('btn-next').onclick = function() { runtime.navigateNext(); };

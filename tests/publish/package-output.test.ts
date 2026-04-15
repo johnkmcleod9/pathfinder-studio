@@ -286,3 +286,126 @@ describe('Stage 7: Output report', () => {
     expect(report.outputPath).toBeUndefined();
   });
 });
+
+describe('Stage 6: Package — xAPI specific artifacts', () => {
+  it('emits tincan.xml at the package root for xAPI', async () => {
+    const tmp = tmpDir();
+    const zipPath = makeTestZip(VALID_PROJECT);
+    const outPath = path.join(tmp, 'out.zip');
+    await publish({
+      inputPath: zipPath,
+      outputPath: outPath,
+      standard: 'xapi',
+      quality: 'low',
+      lrsEndpoint: 'https://lrs.example.com/xapi',
+      lrsAuth: 'Basic abc',
+    });
+    expect(hasZipEntry(outPath, 'tincan.xml')).toBe(true);
+  });
+
+  it('emits index.html as a launch entry for xAPI', async () => {
+    const tmp = tmpDir();
+    const zipPath = makeTestZip(VALID_PROJECT);
+    const outPath = path.join(tmp, 'out.zip');
+    await publish({
+      inputPath: zipPath,
+      outputPath: outPath,
+      standard: 'xapi',
+      quality: 'low',
+      lrsEndpoint: 'https://lrs.example.com/xapi',
+      lrsAuth: 'Basic abc',
+    });
+    expect(hasZipEntry(outPath, 'index.html')).toBe(true);
+  });
+
+  it('tincan.xml references the course id as the activity IRI', async () => {
+    const tmp = tmpDir();
+    const zipPath = makeTestZip(VALID_PROJECT);
+    const outPath = path.join(tmp, 'out.zip');
+    await publish({
+      inputPath: zipPath,
+      outputPath: outPath,
+      standard: 'xapi',
+      quality: 'low',
+      lrsEndpoint: 'https://lrs.example.com/xapi',
+      lrsAuth: 'Basic abc',
+    });
+    const tincan = new AdmZip(outPath).getEntry('tincan.xml')!.getData().toString('utf-8');
+    // VALID_PROJECT has metadata.id = 'pkg-001' (not an IRI), so the
+    // packager should mint a stable IRI under pathfinder.local.
+    expect(tincan).toContain('pathfinder.local/courses/pkg-001');
+  });
+
+  it('tincan.xml passes its own validator', async () => {
+    const tmp = tmpDir();
+    const zipPath = makeTestZip(VALID_PROJECT);
+    const outPath = path.join(tmp, 'out.zip');
+    await publish({
+      inputPath: zipPath,
+      outputPath: outPath,
+      standard: 'xapi',
+      quality: 'low',
+      lrsEndpoint: 'https://lrs.example.com/xapi',
+      lrsAuth: 'Basic abc',
+    });
+    const tincan = new AdmZip(outPath).getEntry('tincan.xml')!.getData().toString('utf-8');
+    const { validateTinCanXml } = await import('../../src/publish/tincan.js');
+    const r = validateTinCanXml(tincan);
+    expect(r.errors).toEqual([]);
+    expect(r.valid).toBe(true);
+  });
+
+  it('does not emit tincan.xml for non-xAPI standards', async () => {
+    const tmp = tmpDir();
+    const zipPath = makeTestZip(VALID_PROJECT);
+    const outPath = path.join(tmp, 'out.zip');
+    await publish({
+      inputPath: zipPath,
+      outputPath: outPath,
+      standard: 'html5',
+      quality: 'low',
+    });
+    expect(hasZipEntry(outPath, 'tincan.xml')).toBe(false);
+  });
+
+  it('xAPI index.html wires the XAPIAdapter', async () => {
+    const tmp = tmpDir();
+    const zipPath = makeTestZip(VALID_PROJECT);
+    const outPath = path.join(tmp, 'out.zip');
+    await publish({
+      inputPath: zipPath,
+      outputPath: outPath,
+      standard: 'xapi',
+      quality: 'low',
+      lrsEndpoint: 'https://lrs.example.com/xapi',
+      lrsAuth: 'Basic abc',
+    });
+    const html = new AdmZip(outPath).getEntry('index.html')!.getData().toString('utf-8');
+    expect(html).toContain('XAPIAdapter');
+    expect(html).toContain('xapi-adapter.js');
+  });
+
+  it('uses the metadata.id as the activity IRI when it is already an IRI', async () => {
+    const tmp = tmpDir();
+    const project = {
+      ...VALID_PROJECT,
+      'project.json': VALID_PROJECT['project.json'].replace(
+        '"pkg-001"',
+        '"https://customer.example.com/courses/onboarding-2026"'
+      ),
+    };
+    const zipPath = makeTestZip(project);
+    const outPath = path.join(tmp, 'out.zip');
+    await publish({
+      inputPath: zipPath,
+      outputPath: outPath,
+      standard: 'xapi',
+      quality: 'low',
+      lrsEndpoint: 'https://lrs.example.com/xapi',
+      lrsAuth: 'Basic abc',
+    });
+    const tincan = new AdmZip(outPath).getEntry('tincan.xml')!.getData().toString('utf-8');
+    expect(tincan).toContain('id="https://customer.example.com/courses/onboarding-2026"');
+    expect(tincan).not.toContain('pathfinder.local');
+  });
+});
