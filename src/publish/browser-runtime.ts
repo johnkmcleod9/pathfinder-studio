@@ -61,6 +61,11 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
       }
     }
 
+    // Per-slide layer visibility — keyed by slide id, value is a map of
+    // layerId → bool.  Reset whenever we enter a slide so layers return
+    // to their declared initial visibility.
+    this.layerVisibility = {};
+
     // Build a question lookup so quiz objects can resolve their question by id.
     this.questionsById = {};
     var quiz = this.course.quiz;
@@ -149,6 +154,7 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
 
   PathfinderRuntime.prototype.navigateNext = function() {
     if (this.currentIndex < this.slideIds.length - 1) {
+      this._resetLayerVisibility(this.getCurrentSlideId());
       this.currentIndex++;
       this._renderCurrentSlide();
       this._persistLocation();
@@ -158,6 +164,7 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
 
   PathfinderRuntime.prototype.navigatePrev = function() {
     if (this.currentIndex > 0) {
+      this._resetLayerVisibility(this.getCurrentSlideId());
       this.currentIndex--;
       this._renderCurrentSlide();
       this._persistLocation();
@@ -244,10 +251,84 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
       if (el) wrapper.appendChild(el);
     }
 
+    // Render each currently-visible layer's objects on top of the base.
+    var slideLayerVis = this._slideLayerVisibility(slide);
+    var layers = slide.layers || [];
+    for (var li = 0; li < layers.length; li++) {
+      var layer = layers[li];
+      if (!layer || !slideLayerVis[layer.id]) continue;
+      var layerObjects = layer.objects || [];
+      for (var lj = 0; lj < layerObjects.length; lj++) {
+        var lel = this._renderObject(layerObjects[lj]);
+        if (lel) {
+          lel.setAttribute('data-layer-id', layer.id);
+          wrapper.appendChild(lel);
+        }
+      }
+    }
+
     this._attachTriggerListeners(wrapper, slide);
 
     this.container.appendChild(wrapper);
     this.currentSlideEl = wrapper;
+  };
+
+  // ---- Layers ----
+
+  // Per-slide layer visibility map. Lazily seeded from each layer's
+  // declared visible flag the first time the slide is rendered.
+  // Reset on slide navigation (see _resetLayerVisibility) so layers
+  // return to their declared initial state on re-entry.
+  PathfinderRuntime.prototype._slideLayerVisibility = function(slide) {
+    var sid = slide.id;
+    if (!this.layerVisibility[sid]) {
+      this.layerVisibility[sid] = {};
+      var layers = slide.layers || [];
+      for (var i = 0; i < layers.length; i++) {
+        if (layers[i] && layers[i].id) {
+          this.layerVisibility[sid][layers[i].id] = layers[i].visible !== false;
+        }
+      }
+    }
+    return this.layerVisibility[sid];
+  };
+
+  PathfinderRuntime.prototype.isLayerVisible = function(layerId) {
+    var slide = this._getSlide(this.getCurrentSlideId());
+    if (!slide) return false;
+    var vis = this._slideLayerVisibility(slide);
+    return vis[layerId] === true;
+  };
+
+  PathfinderRuntime.prototype.showLayer = function(layerId) {
+    this._setLayerVisibility(layerId, true);
+  };
+
+  PathfinderRuntime.prototype.hideLayer = function(layerId) {
+    this._setLayerVisibility(layerId, false);
+  };
+
+  // Forget the visibility map for a slide so the next entry re-seeds
+  // from the declared visible flags. Called when navigating away.
+  PathfinderRuntime.prototype._resetLayerVisibility = function(slideId) {
+    if (slideId && this.layerVisibility[slideId]) {
+      delete this.layerVisibility[slideId];
+    }
+  };
+
+  PathfinderRuntime.prototype._setLayerVisibility = function(layerId, visible) {
+    var slide = this._getSlide(this.getCurrentSlideId());
+    if (!slide) return;
+    var layers = slide.layers || [];
+    var found = false;
+    for (var i = 0; i < layers.length; i++) {
+      if (layers[i] && layers[i].id === layerId) { found = true; break; }
+    }
+    if (!found) return;
+    var vis = this._slideLayerVisibility(slide);
+    if (vis[layerId] === visible) return;
+    vis[layerId] = visible;
+    this._renderCurrentSlide();
   };
 
   PathfinderRuntime.prototype._renderBackground = function(bg) {
@@ -376,6 +457,7 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
       case 'jumpToSlide': {
         var idx = this.slideIds.indexOf(action.target);
         if (idx >= 0) {
+          this._resetLayerVisibility(this.getCurrentSlideId());
           this.currentIndex = idx;
           this._renderCurrentSlide();
           this._persistLocation();
@@ -383,6 +465,12 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
         }
         return;
       }
+      case 'showLayer':
+        this.showLayer(action.target);
+        return;
+      case 'hideLayer':
+        this.hideLayer(action.target);
+        return;
       case 'setVariable':
         this.setVariable(action.target, action.value);
         return;
