@@ -315,6 +315,62 @@ export class PublishPipeline {
     if (this.report.errors.length > 0) {
       this.warn('PUBLISHING_WITH_ERRORS', 'Continuing despite validation errors');
     }
+
+    const std = this.opts.standard;
+
+    // ---- xAPI: require a usable LRS endpoint ----
+    if (std === 'xapi') {
+      const endpoint = this.opts.lrsEndpoint;
+      if (!endpoint || endpoint.trim() === '') {
+        this.error(
+          4,
+          'XAPI_MISSING_LRS_ENDPOINT',
+          'xAPI publish requires an LRS endpoint (--lrs-endpoint)'
+        );
+      } else if (!isValidLrsUrl(endpoint)) {
+        this.error(
+          4,
+          'XAPI_INVALID_LRS_ENDPOINT',
+          'LRS endpoint must be a valid http(s) URL'
+        );
+      } else {
+        if (!isHttpsUrl(endpoint)) {
+          this.warn(
+            'XAPI_INSECURE_LRS_ENDPOINT',
+            'LRS endpoint uses http:// — statements will be sent in clear text'
+          );
+        }
+        if (!this.opts.lrsAuth || this.opts.lrsAuth.trim() === '') {
+          this.warn(
+            'XAPI_MISSING_AUTH',
+            'No LRS auth header provided — most LRSes will reject anonymous statements'
+          );
+        }
+      }
+    }
+
+    // ---- SCORM: validate mastery score ----
+    if (std === 'scorm12' || std === 'scorm2004') {
+      const ms = this.opts.masteryScore;
+      if (ms !== undefined && (typeof ms !== 'number' || !Number.isFinite(ms) || ms < 0 || ms > 100)) {
+        this.error(
+          4,
+          'SCORM_INVALID_MASTERY_SCORE',
+          'masteryScore must be a finite number between 0 and 100'
+        );
+      }
+    }
+
+    // ---- SCORM 1.2: warn on suspend-data overflow risk ----
+    if (std === 'scorm12' && this.runtimeCourse) {
+      const projectedBytes = estimateSuspendDataBytes(this.runtimeCourse);
+      if (projectedBytes > SCORM12_SUSPEND_DATA_LIMIT_BYTES) {
+        this.warn(
+          'SCORM12_SUSPEND_DATA_RISK',
+          `Course state may exceed the SCORM 1.2 4KB suspend_data limit (estimated ${projectedBytes} bytes). Consider SCORM 2004 for resume support.`
+        );
+      }
+    }
   }
 
   // ---- Stage 5: Optimize ----
@@ -435,6 +491,49 @@ export async function publish(
 
 export function cancel(pipeline: PublishPipeline): void {
   pipeline.cancel();
+}
+
+// ---- Stage 4 helpers ----
+
+// SCORM 1.2 spec: cmi.suspend_data is limited to 4096 characters.
+const SCORM12_SUSPEND_DATA_LIMIT_BYTES = 4096;
+
+function isValidLrsUrl(s: string): boolean {
+  try {
+    const u = new URL(s);
+    return u.protocol === 'http:' || u.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+function isHttpsUrl(s: string): boolean {
+  try {
+    return new URL(s).protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Estimate the bytes the runtime will need to persist for resume support.
+ * Captures: the variable map (the dominant contributor), current slide id,
+ * and quiz response state.  This is an upper-bound proxy used for warning
+ * users away from SCORM 1.2 when the course will not fit in 4KB.
+ */
+function estimateSuspendDataBytes(course: RuntimeCourse): number {
+  const sample = {
+    _v: 1,
+    slide: course.navigation?.entry ?? '',
+    attempt: 0,
+    variables: course.variables ?? {},
+    quiz: course.quiz ? { id: course.quiz.id, responses: {} } : undefined,
+  };
+  // base64 inflates the encoded payload by ~4/3 (the runtime base64-encodes
+  // suspend_data before SetValue) — match that here so the warning fires
+  // before the runtime would silently truncate.
+  const json = JSON.stringify(sample);
+  return Math.ceil(json.length * 4 / 3);
 }
 
 // ---- SCORM Manifest Builder ----

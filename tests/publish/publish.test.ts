@@ -249,6 +249,11 @@ describe('Publish Pipeline', () => {
           outputPath: outPath,
           standard: std,
           quality: 'low',
+          // xAPI requires an LRS endpoint + auth; supply both so this
+          // smoke test only fails on actual pipeline regressions.
+          ...(std === 'xapi'
+            ? { lrsEndpoint: 'https://lrs.example.com/xapi', lrsAuth: 'Basic abc' }
+            : {}),
         });
         expect(report.success).toBe(true);
         expect(report.standard).toBe(std);

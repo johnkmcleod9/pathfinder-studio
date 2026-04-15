@@ -99,7 +99,11 @@ export async function assemblePackage(
   // --- Player shell ---
   zip.addFile(
     'player/player-shell.html',
-    Buffer.from(buildPlayerShell(opts.standard), 'utf-8')
+    Buffer.from(buildPlayerShell(opts.standard, {
+      lrsEndpoint: opts.lrsEndpoint,
+      lrsAuth: opts.lrsAuth,
+      masteryScore: opts.masteryScore,
+    }), 'utf-8')
   );
   zip.addFile(
     'player/player.css',
@@ -203,7 +207,22 @@ function copyDirRecursive(
 
 // ---- HTML builders ----
 
-function buildPlayerShell(standard: OutputStandard): string {
+interface PlayerShellConfig {
+  lrsEndpoint?: string;
+  lrsAuth?: string;
+  masteryScore?: number;
+}
+
+function buildPlayerShell(standard: OutputStandard, cfg: PlayerShellConfig = {}): string {
+  // Build the JSON config that gets baked into the shell.  Only emit defined
+  // values so the resulting object doesn't leak undefineds into the JSON
+  // serializer (which would drop them anyway, but explicitness is clearer).
+  const baked: Record<string, unknown> = {};
+  if (cfg.lrsEndpoint !== undefined) baked['lrsEndpoint'] = cfg.lrsEndpoint;
+  if (cfg.lrsAuth !== undefined) baked['lrsAuth'] = cfg.lrsAuth;
+  if (cfg.masteryScore !== undefined) baked['masteryScore'] = cfg.masteryScore;
+  const configJson = jsonForScript(baked);
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -223,7 +242,8 @@ function buildPlayerShell(standard: OutputStandard): string {
   <script src="../pathfinder-runtime.js"></script>
   <script src="../lms/${standard === 'scorm2004' ? 'scorm-2004' : standard === 'scorm12' ? 'scorm-12' : 'xapi'}-adapter.js"></script>
   <script>
-    var config = window.PATHFINDER_CONFIG || {};
+    var PATHFINDER_BAKED_CONFIG = ${configJson};
+    var config = Object.assign({}, PATHFINDER_BAKED_CONFIG, window.PATHFINDER_CONFIG || {});
     var courseData = null;
     var runtime = null;
 
@@ -443,6 +463,22 @@ function objectStyle(obj: RuntimeObject): string {
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/**
+ * Serialize a value as JSON safe for embedding inside an inline <script> tag.
+ * Escapes `<`, `>`, line separators, and Unicode line/paragraph separators
+ * which are valid in JSON strings but break out of HTML script context or
+ * trip the JS lexer. Mirrors the convention used by serialize-javascript /
+ * Next.js __NEXT_DATA__.
+ */
+function jsonForScript(value: unknown): string {
+  return JSON.stringify(value)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
 }
 
 function escapeAttr(s: string): string {
