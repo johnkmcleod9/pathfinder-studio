@@ -31,6 +31,7 @@ import {
   SCORM_12_ADAPTER,
   XAPI_ADAPTER,
 } from './scorm-manifest.js';
+import { BROWSER_RUNTIME } from './browser-runtime.js';
 
 export interface PackagerOptions {
   standard: OutputStandard;
@@ -69,18 +70,18 @@ export async function assemblePackage(
     'Compiled course data'
   );
 
-  // --- Runtime engine (stub — actual runtime built separately) ---
-  // The runtime is bundled separately; here we add a placeholder
-  // that the build system replaces with the actual runtime.js
+  // --- Runtime engine ---
+  // Self-contained IIFE that installs `window.PathfinderRuntime`.
+  // Tested independently in tests/publish/browser-runtime.test.ts.
   zip.addFile(
     'pathfinder-runtime.js',
-    Buffer.from('// Pathfinder Runtime Placeholder — replace with actual runtime\n', 'utf-8'),
-    'Runtime engine stub'
+    Buffer.from(BROWSER_RUNTIME, 'utf-8'),
+    'Pathfinder browser runtime'
   );
   zip.addFile(
     'pathfinder-runtime.css',
-    Buffer.from('/* Pathfinder Runtime CSS Placeholder */\n', 'utf-8'),
-    'Runtime CSS stub'
+    Buffer.from(BROWSER_RUNTIME_CSS, 'utf-8'),
+    'Runtime CSS'
   );
 
   // --- LMS adapters ---
@@ -480,6 +481,27 @@ function computeChecksum(filePath: string): string {
   hash.update(fs.readFileSync(filePath));
   return hash.digest('hex');
 }
+
+// ---- Runtime CSS ----
+
+const BROWSER_RUNTIME_CSS = `/* Pathfinder Runtime CSS */
+.pf-slide {
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+}
+.pf-slide [data-object-id] {
+  box-sizing: border-box;
+}
+.pf-slide button[data-object-id] {
+  cursor: pointer;
+  border: none;
+  font: inherit;
+}
+.pf-slide img[data-object-id] {
+  object-fit: contain;
+}
+`;
 
 // ---- Supporting scripts ----
 

@@ -4,6 +4,7 @@ pathfinder-pkg-test-*/
 pathfinder-cli-test-*/
 pathfinder-parse-test-*/
 pathfinder-publish-*/
+pathfinder-rt-e2e-*/
 pathfinder-structure-test-*/
 
 # Vitest cache

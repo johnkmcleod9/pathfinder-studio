@@ -163,6 +163,25 @@ describe('Stage 6: Package', () => {
     expect(hasZipEntry(outPath, 'index.html')).toBe(true);
   });
 
+  it('html5 package contains a real PathfinderRuntime IIFE (not the placeholder)', async () => {
+    const tmp = tmpDir();
+    const zipPath = makeTestZip(VALID_PROJECT);
+    const outPath = path.join(tmp, 'out.zip');
+    await publish({
+      inputPath: zipPath,
+      outputPath: outPath,
+      standard: 'html5',
+      quality: 'low',
+    });
+    const zip = new AdmZip(outPath);
+    const runtime = zip.getEntry('pathfinder-runtime.js')?.getData().toString('utf-8');
+    expect(runtime).toBeDefined();
+    expect(runtime).toContain('PathfinderRuntime');
+    expect(runtime).toContain('navigateNext');
+    expect(runtime).toContain('navigatePrev');
+    expect(runtime).not.toContain('Placeholder');
+  });
+
   it('does NOT write output when validation fails', async () => {
     const tmp = tmpDir();
     const zipPath = makeTestZip({
