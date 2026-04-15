@@ -3,6 +3,7 @@ pathfinder-test-*/
 pathfinder-pkg-test-*/
 pathfinder-parse-test-*/
 pathfinder-publish-*/
+pathfinder-structure-test-*/
 
 # Vitest cache
 node_modules/.vite/
