@@ -15,66 +15,43 @@
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import * as crypto from 'node:crypto';
+// @ts-ignore — adm-zip has no types published
 import AdmZip from 'adm-zip';
-import { load as loadYaml } from 'js-yaml';
 import {
   PublishOptions,
   PublishReport,
-  PublishError,
-  PublishWarning,
   CourseIR,
   StageId,
   OutputStandard,
-  QualityPreset,
   ImsManifest,
   RuntimeCourse,
-  RuntimeSlide,
-  RuntimeObject,
-  RuntimeBackground,
-  RuntimeLayer,
-  RuntimeTrigger,
-  RuntimeQuestion,
-  RuntimeVariable,
-  RuntimeLMSConfig,
-  RuntimeMediaManifest,
-  MediaAssetIR,
-  SlideIR,
-  ObjectIR,
-  LayerIR,
-  BackgroundIR,
-  MediaRefIR,
-  ResolvedTriggerIR,
-  ActionNodeIR,
-  VariableIR,
-  QuizStateMachineIR,
-  NavigationIR,
-  CourseMetadataIR,
-  RectIR,
-  ConditionIR,
-  MediaAssetIR,
 } from './types.js';
 import { buildScormManifest } from './scorm-manifest.js';
 import { optimizeMedia } from './optimizer.js';
+import { compileCourseIR, buildRuntimeCourse } from './compiler.js';
+import { assemblePackage } from './packager.js';
 
 // ---- Pipeline ----
 
 export class PublishPipeline {
   private opts: PublishOptions;
-  private report: Omit<PublishReport, 'outputPath' | 'packageSize' | 'duration' | 'checksum'>;
+  private report: Omit<PublishReport, 'duration'> & { duration?: number };
   private startTime: number = 0;
   private cancelled = false;
   private baseDir: string;
   private stageStart: Record<StageId, number> = {} as Record<StageId, number>;
   private extractDir: string;
   private workDir: string;
+  private courseIR?: CourseIR;
+  private runtimeCourse?: RuntimeCourse;
+  private mediaHashes: Map<string, string> = new Map();
 
   constructor(opts: PublishOptions) {
     this.opts = {
-      quality: 'medium',
       validateOnly: false,
       masteryScore: 80,
       ...opts,
+      quality: opts.quality ?? 'medium',
     };
     this.report = {
       success: false,
@@ -311,9 +288,25 @@ export class PublishPipeline {
 
   private async stage3_CompileIR(): Promise<void> {
     const projectPath = path.join(this.extractDir, 'project.json');
+    const manifestPath = path.join(this.extractDir, 'manifest.json');
     const project = JSON.parse(fs.readFileSync(projectPath, 'utf-8')) as Record<string, unknown>;
-    const slides = project['slides'] as Record<string, unknown>[];
-    this.report.slideCount = slides.length;
+    const manifest = fs.existsSync(manifestPath)
+      ? (JSON.parse(fs.readFileSync(manifestPath, 'utf-8')) as Record<string, unknown>)
+      : {};
+
+    this.courseIR = compileCourseIR(project, manifest);
+    this.runtimeCourse = buildRuntimeCourse(this.courseIR, {
+      standard: this.opts.standard,
+      masteryScore: this.opts.masteryScore,
+      lrsEndpoint: this.opts.lrsEndpoint,
+      lrsAuth: this.opts.lrsAuth,
+    });
+    this.report.slideCount = this.courseIR.slides.length;
+
+    // Pre-populate media hash map for packager (content-addressed paths)
+    for (const asset of this.courseIR.mediaManifest) {
+      this.mediaHashes.set(asset.hash || asset.id, asset.srcPath || asset.path);
+    }
   }
 
   // ---- Stage 4: LMS Adapter ----
@@ -348,24 +341,85 @@ export class PublishPipeline {
 
   private async stage6_Package(): Promise<void> {
     fs.mkdirSync(this.workDir, { recursive: true });
+
+    // Skip packaging if validation has failed or validateOnly is set.
+    if (this.report.errors.length > 0) return;
+    if (this.opts.validateOnly) return;
+    if (!this.runtimeCourse) {
+      this.error(6, 'NO_COMPILED_COURSE', 'Cannot package — no compiled course IR');
+      return;
+    }
+
+    try {
+      const result = await assemblePackage(
+        {
+          course: this.runtimeCourse,
+          courseIR: this.courseIR,
+          extractDir: this.extractDir,
+          workDir: this.workDir,
+          mediaHashes: this.mediaHashes,
+        },
+        {
+          standard: this.opts.standard,
+          quality: this.opts.quality ?? 'medium',
+          masteryScore: this.opts.masteryScore,
+          title: this.runtimeCourse.metadata.title,
+          author: this.runtimeCourse.metadata.author,
+          language: this.runtimeCourse.metadata.language,
+          lrsEndpoint: this.opts.lrsEndpoint,
+          lrsAuth: this.opts.lrsAuth,
+        },
+        this.opts.outputPath
+      );
+
+      this.report.outputPath = this.opts.outputPath;
+      this.report.checksum = result.checksum;
+    } catch (err: unknown) {
+      const e = err as Error;
+      this.error(6, 'PACKAGE_FAILED', `Failed to assemble package: ${e.message}`, e.stack);
+    }
   }
 
   // ---- Stage 7: Output ----
 
   private async stage7_Output(): Promise<void> {
-    if (this.report.errors.length > 0 && !this.opts.validateOnly) {
-      // Don't write output if validation failed
+    // If validation failed or validateOnly, no file was written — report stops here.
+    if (this.report.errors.length > 0) return;
+    if (this.opts.validateOnly) return;
+    if (!this.report.outputPath) return;
+
+    // Populate final output metadata now that the ZIP exists on disk.
+    try {
+      const stat = fs.statSync(this.report.outputPath);
+      this.report.packageSize = stat.size;
+    } catch (err: unknown) {
+      const e = err as Error;
+      this.error(7, 'OUTPUT_MISSING', `Output file not found after packaging: ${e.message}`);
     }
   }
 
   // ---- Report ----
 
   private buildReport(): PublishReport {
-    return {
-      ...this.report,
-      success: this.report.errors.length === 0,
+    const success = this.report.errors.length === 0;
+    const report: PublishReport = {
+      success,
+      slideCount: this.report.slideCount,
+      mediaCount: this.report.mediaCount,
+      standard: this.report.standard,
+      quality: this.report.quality,
+      stageDurations: this.report.stageDurations,
+      errors: this.report.errors,
+      warnings: this.report.warnings,
       duration: Date.now() - this.startTime,
     };
+    // Only include output metadata when a package was actually written.
+    if (success && !this.opts.validateOnly && this.report.outputPath) {
+      report.outputPath = this.report.outputPath;
+      if (this.report.packageSize !== undefined) report.packageSize = this.report.packageSize;
+      if (this.report.checksum) report.checksum = this.report.checksum;
+    }
+    return report;
   }
 }
 
