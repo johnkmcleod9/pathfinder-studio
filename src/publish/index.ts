@@ -12,6 +12,13 @@ export {
 export { buildScormManifest, renderManifestXml } from './scorm-manifest.js';
 
 export {
+  generateScorm12Manifest,
+  validateScorm12Manifest,
+  type Scorm12ManifestOpts,
+  type Scorm12ValidationResult,
+} from './imsmanifest.js';
+
+export {
   optimizeMedia,
   mimeFromPath,
   subsetFont,
