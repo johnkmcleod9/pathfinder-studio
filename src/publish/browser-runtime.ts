@@ -75,8 +75,74 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
   // ---- Lifecycle ----
 
   PathfinderRuntime.prototype.start = function() {
+    this._restoreFromLms();
     this._renderCurrentSlide();
     this._emit('slidechange', this.getCurrentSlideId(), this.currentIndex, this.slideIds.length);
+  };
+
+  // ---- Resume / suspend-data ----
+
+  PathfinderRuntime.prototype._restoreFromLms = function() {
+    if (!this.lmsAdapter || typeof this.lmsAdapter.LoadSuspendData !== 'function') return;
+    var state;
+    try {
+      state = this.lmsAdapter.LoadSuspendData();
+    } catch (e) {
+      if (typeof console !== 'undefined' && console.warn) {
+        console.warn('[PathfinderRuntime] LoadSuspendData threw:', e);
+      }
+      return;
+    }
+    if (!state || typeof state !== 'object') return;
+
+    // Restore current slide if it still exists in the course.
+    if (typeof state.slide === 'string') {
+      var idx = this.slideIds.indexOf(state.slide);
+      if (idx >= 0) this.currentIndex = idx;
+    }
+
+    // Restore variable values (overrides declared defaults).
+    if (state.variables && typeof state.variables === 'object') {
+      for (var k in state.variables) {
+        if (Object.prototype.hasOwnProperty.call(state.variables, k)) {
+          this.variables[k] = state.variables[k];
+        }
+      }
+    }
+
+    // Restore last quiz score so re-entering shows the prior result.
+    if (state.lastQuizScore && typeof state.lastQuizScore === 'object') {
+      this.lastQuizScore = state.lastQuizScore;
+    }
+  };
+
+  PathfinderRuntime.prototype.saveProgress = function() {
+    if (!this.lmsAdapter || typeof this.lmsAdapter.SaveSuspendData !== 'function') return;
+    var snapshot = {
+      _v: 1,
+      slide: this.getCurrentSlideId(),
+      variables: this.variables,
+      lastQuizScore: this.lastQuizScore,
+    };
+    try {
+      this.lmsAdapter.SaveSuspendData(snapshot);
+    } catch (e) {
+      if (typeof console !== 'undefined' && console.warn) {
+        console.warn('[PathfinderRuntime] SaveSuspendData threw:', e);
+      }
+    }
+  };
+
+  PathfinderRuntime.prototype._persistLocation = function() {
+    if (!this.lmsAdapter) return;
+    if (typeof this.lmsAdapter.SaveLocation === 'function') {
+      try { this.lmsAdapter.SaveLocation(this.getCurrentSlideId()); } catch (e) {
+        if (typeof console !== 'undefined' && console.warn) {
+          console.warn('[PathfinderRuntime] SaveLocation threw:', e);
+        }
+      }
+    }
+    this.saveProgress();
   };
 
   // ---- Navigation ----
@@ -85,6 +151,7 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
     if (this.currentIndex < this.slideIds.length - 1) {
       this.currentIndex++;
       this._renderCurrentSlide();
+      this._persistLocation();
       this._emit('slidechange', this.getCurrentSlideId(), this.currentIndex, this.slideIds.length);
     }
   };
@@ -93,6 +160,7 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
     if (this.currentIndex > 0) {
       this.currentIndex--;
       this._renderCurrentSlide();
+      this._persistLocation();
       this._emit('slidechange', this.getCurrentSlideId(), this.currentIndex, this.slideIds.length);
     }
   };
@@ -117,6 +185,7 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
 
   PathfinderRuntime.prototype.setVariable = function(name, value) {
     this.variables[name] = value;
+    this.saveProgress();
   };
 
   // ---- Pub/sub ----
@@ -309,12 +378,13 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
         if (idx >= 0) {
           this.currentIndex = idx;
           this._renderCurrentSlide();
+          this._persistLocation();
           this._emit('slidechange', this.getCurrentSlideId(), this.currentIndex, this.slideIds.length);
         }
         return;
       }
       case 'setVariable':
-        this.variables[action.target] = action.value;
+        this.setVariable(action.target, action.value);
         return;
       case 'navigateNext':
         this.navigateNext();

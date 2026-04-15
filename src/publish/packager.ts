@@ -329,9 +329,11 @@ function buildI18n(): Record<string, Record<string, string>> {
   };
 }
 
-function buildLaunchHtml(standard: OutputStandard): string {
-  if (standard === 'scorm2004') {
-    return `<!DOCTYPE html>
+function buildLaunchHtml(_standard: OutputStandard): string {
+  // The launch wrapper is identical for SCORM 1.2 and 2004 — the LMS
+  // loads it, then we hand off to the player shell which handles the
+  // standard-specific adapter discovery.
+  return `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
@@ -347,8 +349,6 @@ function buildLaunchHtml(standard: OutputStandard): string {
   <p>Loading course...</p>
 </body>
 </html>`;
-  }
-  return buildLaunchHtml('scorm2004');
 }
 
 function buildHtml5Index(): string {
