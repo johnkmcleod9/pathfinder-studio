@@ -7,6 +7,7 @@ pathfinder-publish-*/
 pathfinder-rt-e2e-*/
 pathfinder-structure-test-*/
 pathfinder-lms-test-*/
+pathfinder-opt-test-*/
 
 # Vitest cache
 node_modules/.vite/

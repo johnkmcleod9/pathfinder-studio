@@ -332,6 +332,15 @@ async function handlePublish(argv: string[], io: CliIO): Promise<number> {
     io.stdout(`✓ Published: ${report.outputPath ?? args.output}\n`);
     io.stdout(`  standard: ${args.standard}\n`);
     io.stdout(`  slides:   ${report.slideCount}\n`);
+    if (report.mediaCount > 0) {
+      const opt = report.mediaOptimized;
+      const saved = report.mediaBytesSaved;
+      io.stdout(
+        `  media:    ${report.mediaCount}` +
+          (opt > 0 ? ` (${opt} optimized, ${formatBytes(saved)} saved)` : '') +
+          `\n`
+      );
+    }
     if (report.packageSize !== undefined) {
       io.stdout(`  size:     ${formatBytes(report.packageSize)}\n`);
     }

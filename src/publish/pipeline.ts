@@ -57,6 +57,8 @@ export class PublishPipeline {
       success: false,
       slideCount: 0,
       mediaCount: 0,
+      mediaOptimized: 0,
+      mediaBytesSaved: 0,
       standard: this.opts.standard,
       quality: this.opts.quality,
       stageDurations: {} as Record<StageId, number>,
@@ -379,18 +381,26 @@ export class PublishPipeline {
     const mediaDir = path.join(this.extractDir, 'media');
     const contentDir = path.join(this.extractDir, 'content');
     const dirs = [mediaDir, contentDir].filter((d) => fs.existsSync(d));
+    let total = 0;
     let optimized = 0;
+    let bytesSaved = 0;
     for (const dir of dirs) {
       const files = fs.readdirSync(dir);
       for (const file of files) {
         const filePath = path.join(dir, file);
         const stat = fs.statSync(filePath);
         if (!stat.isFile()) continue;
+        total++;
         const result = await optimizeMedia(filePath, this.opts.quality);
-        if (result.optimized) optimized++;
+        if (result.optimized) {
+          optimized++;
+          bytesSaved += result.savedBytes;
+        }
       }
     }
-    this.report.mediaCount = optimized;
+    this.report.mediaCount = total;
+    this.report.mediaOptimized = optimized;
+    this.report.mediaBytesSaved = bytesSaved;
   }
 
   // ---- Stage 6: Package ----
@@ -462,6 +472,8 @@ export class PublishPipeline {
       success,
       slideCount: this.report.slideCount,
       mediaCount: this.report.mediaCount,
+      mediaOptimized: this.report.mediaOptimized,
+      mediaBytesSaved: this.report.mediaBytesSaved,
       standard: this.report.standard,
       quality: this.report.quality,
       stageDurations: this.report.stageDurations,

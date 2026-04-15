@@ -48,7 +48,9 @@ export interface PublishReport {
   outputPath?: string;
   packageSize?: number;         // bytes
   slideCount: number;
-  mediaCount: number;
+  mediaCount: number;           // total media files processed by Stage 5
+  mediaOptimized: number;       // count of files the optimizer actually shrank
+  mediaBytesSaved: number;      // sum of (originalSize - optimizedSize)
   standard: OutputStandard;
   quality: QualityPreset;
   duration: number;             // ms

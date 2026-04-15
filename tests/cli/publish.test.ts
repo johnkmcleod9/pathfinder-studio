@@ -202,6 +202,52 @@ describe('CLI: publish success path', () => {
     const r = await run(['publish', input, '-o', output, '-s', 'html5']);
     expect(r.out).toContain(output);
   });
+
+  it('omits media line when course has no media', async () => {
+    const input = makeValidZip();
+    const output = path.join(tmpDir(), 'out.zip');
+    const r = await run(['publish', input, '-o', output, '-s', 'html5']);
+    expect(r.out).not.toMatch(/media:/);
+  });
+
+  it('prints media count + savings when course has compressible media', async () => {
+    // A fixture with one optimizable SVG so Stage 5 has work to do.
+    const dir = tmpDir();
+    const inputPath = path.join(dir, 'in.pathfinder');
+    const zip = new AdmZip();
+    zip.addFile(
+      'media/big.svg',
+      Buffer.from(
+        '<?xml version="1.0"?><!-- this comment will be stripped by the optimizer to save bytes -->' +
+          '<svg xmlns="http://www.w3.org/2000/svg"   width="10"   height="10"><rect x="0" y="0"/></svg>',
+        'utf-8'
+      )
+    );
+    zip.addFile(
+      'project.json',
+      Buffer.from(JSON.stringify({
+        metadata: { id: 'm', title: 'M', author: 'A', language: 'en' },
+        slides: [{ id: 's', title: 'S', background: { type: 'solid', color: '#fff' }, objects: {}, zOrder: [], triggers: [] }],
+        variables: {},
+        navigation: { entrySlide: 's', slides: ['s'], showNavigationArrows: true },
+      }))
+    );
+    zip.addFile(
+      'manifest.json',
+      Buffer.from(JSON.stringify({
+        version: '1.0',
+        assets: { big: { path: 'media/big.svg', size: 200, mimeType: 'image/svg+xml' } },
+      }))
+    );
+    zip.writeZip(inputPath);
+
+    const output = path.join(dir, 'out.zip');
+    const r = await run(['publish', inputPath, '-o', output, '-s', 'html5']);
+    expect(r.exitCode).toBe(0);
+    expect(r.out).toMatch(/media:\s+1/);
+    expect(r.out).toMatch(/optimized/);
+    expect(r.out).toMatch(/saved/);
+  });
 });
 
 describe('CLI: publish --validate-only', () => {
