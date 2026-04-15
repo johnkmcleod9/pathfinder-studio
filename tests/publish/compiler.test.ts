@@ -242,3 +242,70 @@ describe('Stage 3: buildRuntimeCourse', () => {
     expect(slide2.triggers[0].action).toEqual({ type: 'jumpToSlide', target: 'slide-1' });
   });
 });
+
+describe('buildRuntimeCourse — quiz wire-through', () => {
+  const QUIZ_PROJECT = {
+    metadata: { id: 'qq', title: 'Q', author: 'A', language: 'en' },
+    slides: [
+      {
+        id: 's1',
+        title: 'S',
+        background: { type: 'solid', color: '#FFF' },
+        objects: {},
+        zOrder: [],
+        triggers: [],
+      },
+    ],
+    variables: {},
+    navigation: { entrySlide: 's1', slides: ['s1'], showNavigationArrows: false },
+    quiz: {
+      id: 'quiz-1',
+      passingScore: 75,
+      attemptsAllowed: 3,
+      allowReview: true,
+      questions: [
+        {
+          id: 'q1',
+          type: 'multiple_choice',
+          text: 'Pick A',
+          points: 5,
+          options: [
+            { id: 'a', text: 'A', isCorrect: true },
+            { id: 'b', text: 'B', isCorrect: false },
+          ],
+        },
+      ],
+    },
+  };
+
+  it('omits course.quiz when project has no quiz block', () => {
+    const ir: CourseIR = compileCourseIR(
+      { ...QUIZ_PROJECT, quiz: undefined },
+      { version: '1.0', assets: {} }
+    );
+    const rc: RuntimeCourse = buildRuntimeCourse(ir, { standard: 'html5' });
+    expect(rc.quiz).toBeUndefined();
+  });
+
+  it('propagates quiz id, passingScore, attemptsAllowed, allowReview', () => {
+    const ir: CourseIR = compileCourseIR(QUIZ_PROJECT, { version: '1.0', assets: {} });
+    const rc: RuntimeCourse = buildRuntimeCourse(ir, { standard: 'html5' });
+    expect(rc.quiz).toBeDefined();
+    expect(rc.quiz!.id).toBe('quiz-1');
+    expect(rc.quiz!.passingScore).toBe(75);
+    expect(rc.quiz!.attemptsAllowed).toBe(3);
+    expect(rc.quiz!.allowReview).toBe(true);
+  });
+
+  it('propagates each question id, type, text, points, options', () => {
+    const ir: CourseIR = compileCourseIR(QUIZ_PROJECT, { version: '1.0', assets: {} });
+    const rc: RuntimeCourse = buildRuntimeCourse(ir, { standard: 'html5' });
+    const q = rc.quiz!.questions[0];
+    expect(q.id).toBe('q1');
+    expect(q.type).toBe('multiple_choice');
+    expect(q.text).toBe('Pick A');
+    expect(q.points).toBe(5);
+    expect(q.options).toHaveLength(2);
+    expect(q.options![0]).toMatchObject({ id: 'a', isCorrect: true });
+  });
+});

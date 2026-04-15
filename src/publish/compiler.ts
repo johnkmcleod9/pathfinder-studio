@@ -84,6 +84,7 @@ export function compileCourseIR(project: unknown, manifest: unknown): CourseIR {
 
 export function buildRuntimeCourse(ir: CourseIR, opts: BuildRuntimeOptions): RuntimeCourse {
   const canvas = opts.canvas ?? DEFAULT_CANVAS;
+  const quiz = toRuntimeQuiz(ir.quizStateMachine);
   return {
     format: 'pathfinder-v1',
     version: '1.0',
@@ -103,6 +104,7 @@ export function buildRuntimeCourse(ir: CourseIR, opts: BuildRuntimeOptions): Run
     navigation: toRuntimeNavigation(ir.navigation),
     media: toRuntimeMediaManifest(ir.mediaManifest),
     lms: buildLmsConfig(opts),
+    ...(quiz ? { quiz } : {}),
   };
 }
 
@@ -386,6 +388,43 @@ function compileQuizStateMachine(quiz: JsonRecord | undefined): QuizStateMachine
     allowReview: quiz['allowReview'] === true,
     randomizeQuestions: quiz['randomizeQuestions'] === true,
     randomizeOptions: quiz['randomizeOptions'] === true,
+  };
+}
+
+/**
+ * Convert the IR quiz state machine to the runtime course shape.
+ * Returns undefined when the project has no quiz so we can skip emitting
+ * the field entirely (avoids shipping an empty quiz block).
+ */
+function toRuntimeQuiz(qsm: QuizStateMachineIR): RuntimeCourse['quiz'] | undefined {
+  if (!qsm || !qsm.id || qsm.questions.length === 0) return undefined;
+  return {
+    id: qsm.id,
+    passingScore: qsm.passingScore,
+    attemptsAllowed: qsm.attemptsAllowed,
+    allowReview: qsm.allowReview,
+    questions: qsm.questions.map((q) => {
+      const out: NonNullable<RuntimeCourse['quiz']>['questions'][number] = {
+        id: q.id,
+        type: q.type,
+        text: q.text,
+        points: q.points,
+      };
+      if (q.options) {
+        out.options = q.options.map((o) => ({
+          id: o.id,
+          label: o.text,
+          isCorrect: o.isCorrect === true,
+        }));
+      }
+      if (q.correctAnswer !== undefined && (typeof q.correctAnswer === 'string' || Array.isArray(q.correctAnswer))) {
+        out.correctAnswer = q.correctAnswer;
+      }
+      if (q.caseSensitive !== undefined) out.caseSensitive = q.caseSensitive;
+      if (q.wildcard !== undefined) out.wildcard = q.wildcard;
+      if (q.tolerance !== undefined) out.tolerance = q.tolerance;
+      return out;
+    }),
   };
 }
 
