@@ -309,3 +309,88 @@ describe('buildRuntimeCourse — quiz wire-through', () => {
     expect(q.options![0]).toMatchObject({ id: 'a', isCorrect: true });
   });
 });
+
+describe('compileTrigger / toRuntimeTrigger — conditions propagation', () => {
+  const PROJECT_WITH_COND_TRIGGER = {
+    metadata: { id: 'cc', title: 'C', author: 'A', language: 'en' },
+    slides: [
+      {
+        id: 's1',
+        title: 'S',
+        background: { type: 'solid', color: '#FFF' },
+        objects: {
+          btn: {
+            type: 'button',
+            rect: { x: 0, y: 0, w: 100, h: 30 },
+            content: 'Go',
+            triggers: [
+              {
+                id: 't1',
+                event: { type: 'userClick' },
+                action: { type: 'jumpToSlide', target: 's2' },
+                conditions: [
+                  { type: 'variableGreaterThan', variable: 'Score', value: 80 },
+                  { type: 'variableEquals', variable: 'Done', value: true },
+                ],
+              },
+            ],
+          },
+        },
+        zOrder: ['btn'],
+        triggers: [],
+      },
+      { id: 's2', title: 'T', background: { type: 'solid', color: '#FFF' }, objects: {}, zOrder: [], triggers: [] },
+    ],
+    variables: {},
+    navigation: { entrySlide: 's1', slides: ['s1', 's2'], showNavigationArrows: false },
+  };
+
+  it('propagates trigger.conditions through compileCourseIR', () => {
+    const ir: CourseIR = compileCourseIR(PROJECT_WITH_COND_TRIGGER, { version: '1.0', assets: {} });
+    const trig = ir.slides[0].triggers[0];
+    expect(trig).toBeDefined();
+    // ResolvedTriggerIR now carries conditions[].
+    const conds = (trig as unknown as { conditions?: unknown[] }).conditions ?? [];
+    expect(conds.length).toBe(2);
+  });
+
+  it('propagates conditions through buildRuntimeCourse to RuntimeTrigger', () => {
+    const ir: CourseIR = compileCourseIR(PROJECT_WITH_COND_TRIGGER, { version: '1.0', assets: {} });
+    const rc: RuntimeCourse = buildRuntimeCourse(ir, { standard: 'html5' });
+    const trig = rc.slides[0].triggers[0];
+    expect(trig.conditions).toBeDefined();
+    expect(trig.conditions!.length).toBe(2);
+    expect(trig.conditions![0].type).toBe('variableGreaterThan');
+    expect(trig.conditions![0].variable).toBe('Score');
+    expect(trig.conditions![0].value).toBe(80);
+    expect(trig.conditions![1].type).toBe('variableEquals');
+  });
+
+  it('omits conditions field when no conditions on raw trigger', () => {
+    const project = {
+      ...PROJECT_WITH_COND_TRIGGER,
+      slides: [
+        {
+          ...PROJECT_WITH_COND_TRIGGER.slides[0],
+          objects: {
+            btn: {
+              ...PROJECT_WITH_COND_TRIGGER.slides[0].objects.btn,
+              triggers: [
+                {
+                  id: 't1',
+                  event: { type: 'userClick' },
+                  action: { type: 'jumpToSlide', target: 's2' },
+                  // no conditions
+                },
+              ],
+            },
+          },
+        },
+        PROJECT_WITH_COND_TRIGGER.slides[1],
+      ],
+    };
+    const ir: CourseIR = compileCourseIR(project, { version: '1.0', assets: {} });
+    const rc: RuntimeCourse = buildRuntimeCourse(ir, { standard: 'html5' });
+    expect(rc.slides[0].triggers[0].conditions).toBeUndefined();
+  });
+});

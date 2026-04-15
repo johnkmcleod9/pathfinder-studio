@@ -12,6 +12,7 @@
 import {
   ActionNodeIR,
   BackgroundIR,
+  ConditionIR,
   CourseIR,
   CourseMetadataIR,
   EventIR,
@@ -261,7 +262,8 @@ function compileTrigger(raw: JsonRecord, sourceObjectId?: string): ResolvedTrigg
   const event = raw['event'] as JsonRecord | undefined;
   const action = raw['action'] as JsonRecord | undefined;
   if (!event || !action) return null;
-  return {
+  const conditions = compileConditions(raw['conditions']);
+  const out: ResolvedTriggerIR = {
     id: asString(raw['id'], ''),
     event: {
       type: asString(event['type'], ''),
@@ -270,6 +272,30 @@ function compileTrigger(raw: JsonRecord, sourceObjectId?: string): ResolvedTrigg
     actionGraph: compileAction(action),
     priority: asNumber(raw['priority'], 0),
   };
+  if (conditions && conditions.length > 0) out.conditions = conditions;
+  return out;
+}
+
+/**
+ * Compile a raw conditions array into the IR shape. Returns undefined
+ * when there are no conditions so callers can omit the field — keeps
+ * the IR (and downstream course.json) free of empty arrays for the
+ * common no-conditions case.
+ */
+function compileConditions(raw: unknown): ConditionIR[] | undefined {
+  if (!Array.isArray(raw) || raw.length === 0) return undefined;
+  const out: ConditionIR[] = [];
+  for (const c of raw as JsonRecord[]) {
+    if (!c || typeof c !== 'object') continue;
+    const type = asString(c['type'], '');
+    if (!type) continue;
+    const cond: ConditionIR = { type: type as ConditionIR['type'] };
+    if (typeof c['variable'] === 'string') cond.variable = c['variable'];
+    if (c['value'] !== undefined) cond.value = c['value'] as ConditionIR['value'];
+    if (typeof c['scoreThreshold'] === 'number') cond.scoreThreshold = c['scoreThreshold'];
+    out.push(cond);
+  }
+  return out.length > 0 ? out : undefined;
 }
 
 function compileAction(raw: JsonRecord): ActionNodeIR {
@@ -498,12 +524,14 @@ function toRuntimeBackground(bg: BackgroundIR): RuntimeBackground {
 }
 
 function toRuntimeTrigger(t: ResolvedTriggerIR): RuntimeTrigger {
-  return {
+  const out: RuntimeTrigger = {
     id: t.id,
     event: { type: t.event.type, source: t.event.source },
     action: t.actionGraph,
     priority: t.priority,
   };
+  if (t.conditions && t.conditions.length > 0) out.conditions = t.conditions;
+  return out;
 }
 
 function toRuntimeVariables(vars: VariableIR[]): Record<string, RuntimeVariable> {

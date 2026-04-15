@@ -179,6 +179,7 @@ export interface ResolvedTriggerIR {
   id: string;
   event: EventIR;
   actionGraph: ActionNodeIR;
+  conditions?: ConditionIR[];
   priority: number;
 }
 

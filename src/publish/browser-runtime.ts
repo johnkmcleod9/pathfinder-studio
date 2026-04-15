@@ -446,9 +446,59 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
       var objectId = target.getAttribute('data-object-id');
       var triggered = clickTriggers[objectId] || [];
       for (var j = 0; j < triggered.length; j++) {
-        self._executeAction(triggered[j].action);
+        var t = triggered[j];
+        if (!self._conditionsPass(t.conditions)) continue;
+        self._executeAction(t.action);
       }
     });
+  };
+
+  // ---- Trigger condition evaluation ----
+
+  // Returns true when every condition in the array passes (AND).
+  // Returns true for missing / empty arrays so triggers without
+  // conditions fire unconditionally — preserves backwards
+  // compatibility with packages compiled before this change.
+  PathfinderRuntime.prototype._conditionsPass = function(conditions) {
+    if (!conditions || !conditions.length) return true;
+    for (var i = 0; i < conditions.length; i++) {
+      if (!this._evalCondition(conditions[i])) return false;
+    }
+    return true;
+  };
+
+  PathfinderRuntime.prototype._evalCondition = function(cond) {
+    if (!cond || !cond.type) return false;
+    switch (cond.type) {
+      case 'variableEquals': {
+        var v = this.variables[cond.variable];
+        return v === cond.value;
+      }
+      case 'variableGreaterThan': {
+        var n = Number(this.variables[cond.variable]);
+        var t = Number(cond.value);
+        if (isNaN(n) || isNaN(t)) return false;
+        return n > t;
+      }
+      case 'variableLessThan': {
+        var n2 = Number(this.variables[cond.variable]);
+        var t2 = Number(cond.value);
+        if (isNaN(n2) || isNaN(t2)) return false;
+        return n2 < t2;
+      }
+      case 'scoreGreaterThan': {
+        if (!this.lastQuizScore) return false;
+        return this.lastQuizScore.percent > cond.scoreThreshold;
+      }
+      case 'scoreLessThan': {
+        if (!this.lastQuizScore) return false;
+        return this.lastQuizScore.percent < cond.scoreThreshold;
+      }
+      default:
+        // Unknown condition type — fail-safe to false so an unrecognised
+        // condition cannot silently approve an action.
+        return false;
+    }
   };
 
   PathfinderRuntime.prototype._executeAction = function(action) {
