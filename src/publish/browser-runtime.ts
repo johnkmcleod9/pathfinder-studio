@@ -925,6 +925,102 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
         return function(e) { self.quizAnswers[qid] = e.target.value; };
       })(question.id));
       listEl.appendChild(input2);
+    } else if (question.type === 'matching') {
+      // Matching: one <select> per item; options are the match targets.
+      var targets = question.matchTargets || [];
+      var items = question.options || [];
+      if (!self.quizAnswers[question.id]) self.quizAnswers[question.id] = {};
+      for (var mi = 0; mi < items.length; mi++) {
+        var mItem = items[mi];
+        var mRow = document.createElement('div');
+        mRow.style.display = 'flex';
+        mRow.style.alignItems = 'center';
+        mRow.style.gap = '8px';
+        mRow.style.marginBottom = '4px';
+        var mLabel = document.createElement('span');
+        mLabel.textContent = mItem.text || mItem.id;
+        mRow.appendChild(mLabel);
+        var mSel = document.createElement('select');
+        mSel.setAttribute('data-item-id', mItem.id);
+        var mBlank = document.createElement('option');
+        mBlank.value = '';
+        mBlank.textContent = '-- Select --';
+        mSel.appendChild(mBlank);
+        for (var mt = 0; mt < targets.length; mt++) {
+          var mOpt = document.createElement('option');
+          mOpt.value = targets[mt].id;
+          mOpt.textContent = targets[mt].text || targets[mt].id;
+          mSel.appendChild(mOpt);
+        }
+        mSel.addEventListener('change', (function(qid, itemId) {
+          return function(e) {
+            var map = self.quizAnswers[qid];
+            if (typeof map !== 'object' || map === null) map = {};
+            map[itemId] = e.target.value;
+            self.quizAnswers[qid] = map;
+          };
+        })(question.id, mItem.id));
+        mRow.appendChild(mSel);
+        listEl.appendChild(mRow);
+      }
+    } else if (question.type === 'sequencing') {
+      // Sequencing: each option as a moveable item with up/down buttons.
+      var seqOpts = (question.options || []).slice();
+      var seqIds = seqOpts.map(function(o) { return o.id; });
+      self.quizAnswers[question.id] = seqIds;
+
+      var renderSeqItems = function() {
+        listEl.innerHTML = '';
+        var currentIds = self.quizAnswers[question.id];
+        for (var si = 0; si < currentIds.length; si++) {
+          var sOpt = seqOpts.find(function(o) { return o.id === currentIds[si]; });
+          var sRow = document.createElement('div');
+          sRow.setAttribute('data-seq-item', currentIds[si]);
+          sRow.style.display = 'flex';
+          sRow.style.alignItems = 'center';
+          sRow.style.gap = '8px';
+          sRow.style.marginBottom = '4px';
+          var upBtn = document.createElement('button');
+          upBtn.type = 'button';
+          upBtn.setAttribute('data-action', 'up');
+          upBtn.textContent = '\\u25B2';
+          upBtn.disabled = (si === 0);
+          upBtn.addEventListener('click', (function(idx) {
+            return function() {
+              var arr = self.quizAnswers[question.id];
+              if (idx > 0) {
+                var tmp = arr[idx - 1];
+                arr[idx - 1] = arr[idx];
+                arr[idx] = tmp;
+                renderSeqItems();
+              }
+            };
+          })(si));
+          var downBtn = document.createElement('button');
+          downBtn.type = 'button';
+          downBtn.setAttribute('data-action', 'down');
+          downBtn.textContent = '\\u25BC';
+          downBtn.disabled = (si === currentIds.length - 1);
+          downBtn.addEventListener('click', (function(idx) {
+            return function() {
+              var arr = self.quizAnswers[question.id];
+              if (idx < arr.length - 1) {
+                var tmp = arr[idx + 1];
+                arr[idx + 1] = arr[idx];
+                arr[idx] = tmp;
+                renderSeqItems();
+              }
+            };
+          })(si));
+          var sLabel = document.createElement('span');
+          sLabel.textContent = sOpt ? (sOpt.text || sOpt.id) : currentIds[si];
+          sRow.appendChild(upBtn);
+          sRow.appendChild(downBtn);
+          sRow.appendChild(sLabel);
+          listEl.appendChild(sRow);
+        }
+      };
+      renderSeqItems();
     }
 
     fieldset.appendChild(listEl);
@@ -1023,6 +1119,28 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
         if (isNaN(num) || isNaN(target)) return false;
         var tol = (typeof question.tolerance === 'number') ? question.tolerance : 0;
         return Math.abs(num - target) <= tol;
+      }
+      case 'matching': {
+        // response is { itemId: targetId, ... }. Check each item's
+        // matchTarget against the selected target.
+        if (!response || typeof response !== 'object') return false;
+        var items = question.options || [];
+        for (var mi = 0; mi < items.length; mi++) {
+          var mItem = items[mi];
+          if (response[mItem.id] !== mItem.matchTarget) return false;
+        }
+        return true;
+      }
+      case 'sequencing': {
+        // response is an array of option ids in learner order.
+        // correctSequence is the expected order.
+        if (!Array.isArray(response)) return false;
+        var seq = question.correctSequence || [];
+        if (response.length !== seq.length) return false;
+        for (var si = 0; si < seq.length; si++) {
+          if (response[si] !== seq[si]) return false;
+        }
+        return true;
       }
       default:
         return false;
