@@ -242,6 +242,8 @@ export interface QuizQuestionIR {
   pairs?: Array<{ key: string; value: string }>;
   hotspotRegion?: RectIR;
   attemptsAllowed?: number;
+  matchTargets?: Array<{ id: string; text: string }>;
+  correctSequence?: string[];
 }
 
 export interface QuizOptionIR {
@@ -249,6 +251,7 @@ export interface QuizOptionIR {
   text: string;
   isCorrect?: boolean;
   weight?: number;
+  matchTarget?: string;
 }
 
 export interface NavigationIR {
@@ -454,11 +457,13 @@ export interface RuntimeQuestion {
   type: string;
   text: string;
   points: number;
-  options?: Array<{ id: string; label: string; isCorrect: boolean }>;
+  options?: Array<{ id: string; label: string; isCorrect: boolean; matchTarget?: string }>;
   correctAnswer?: string | string[];
   caseSensitive?: boolean;
   wildcard?: boolean;
   tolerance?: number;
+  matchTargets?: Array<{ id: string; text: string }>;
+  correctSequence?: string[];
 }
 
 export interface RuntimeMediaManifest {

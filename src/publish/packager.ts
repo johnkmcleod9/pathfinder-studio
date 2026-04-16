@@ -491,6 +491,12 @@ function buildXapiIndex(): string {
             else window.XAPIAdapter.failed(score.percent / 100);
           }
         });
+        runtime.on('coursecomplete', function() {
+          if (window.XAPIAdapter) window.XAPIAdapter.completed();
+        });
+        runtime.on('sessionend', function(payload) {
+          if (window.XAPIAdapter) window.XAPIAdapter.terminate();
+        });
         document.getElementById('btn-prev').onclick = function() { runtime.navigatePrev(); };
         document.getElementById('btn-next').onclick = function() { runtime.navigateNext(); };
         var doTerminate = function() { try { runtime.terminate(); } catch (_) {} };

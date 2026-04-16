@@ -438,7 +438,9 @@ function compileQuizStateMachine(quiz: JsonRecord | undefined): QuizStateMachine
       type: asString(q['type'], 'multipleChoice'),
       text: asString(q['text'], ''),
       points: asNumber(q['points'], 1),
-      options: q['options'] as unknown as Array<{ id: string; text: string; isCorrect?: boolean; weight?: number }>,
+      options: q['options'] as unknown as Array<{ id: string; text: string; isCorrect?: boolean; weight?: number; matchTarget?: string }>,
+      matchTargets: Array.isArray(q['matchTargets']) ? q['matchTargets'] as Array<{ id: string; text: string }> : undefined,
+      correctSequence: Array.isArray(q['correctSequence']) ? q['correctSequence'] as string[] : undefined,
       correctAnswer: q['correctAnswer'] as string | string[] | number | undefined,
     })),
     passingScore: asNumber(quiz['passingScore'], 80),
@@ -473,6 +475,7 @@ function toRuntimeQuiz(qsm: QuizStateMachineIR): RuntimeCourse['quiz'] | undefin
           id: o.id,
           label: o.text,
           isCorrect: o.isCorrect === true,
+          ...(o.matchTarget ? { matchTarget: o.matchTarget } : {}),
         }));
       }
       if (q.correctAnswer !== undefined && (typeof q.correctAnswer === 'string' || Array.isArray(q.correctAnswer))) {
@@ -481,6 +484,8 @@ function toRuntimeQuiz(qsm: QuizStateMachineIR): RuntimeCourse['quiz'] | undefin
       if (q.caseSensitive !== undefined) out.caseSensitive = q.caseSensitive;
       if (q.wildcard !== undefined) out.wildcard = q.wildcard;
       if (q.tolerance !== undefined) out.tolerance = q.tolerance;
+      if (q.matchTargets) out.matchTargets = q.matchTargets;
+      if (q.correctSequence) out.correctSequence = q.correctSequence;
       return out;
     }),
   };

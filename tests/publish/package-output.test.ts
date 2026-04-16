@@ -447,3 +447,31 @@ describe('Stage 6: Package — terminate() wired to browser unload', () => {
     expect(html).toContain("'visibilitychange'");
   });
 });
+
+describe('Stage 6: Package — xAPI lifecycle verbs', () => {
+  it('xAPI index.html bridges coursecomplete → XAPIAdapter.completed()', async () => {
+    const tmp = tmpDir();
+    const zipPath = makeTestZip(VALID_PROJECT);
+    const outPath = path.join(tmp, 'out.zip');
+    await publish({
+      inputPath: zipPath, outputPath: outPath, standard: 'xapi', quality: 'low',
+      lrsEndpoint: 'https://lrs.example.com/xapi', lrsAuth: 'Basic x',
+    });
+    const html = new AdmZip(outPath).getEntry('index.html')!.getData().toString('utf-8');
+    expect(html).toContain("'coursecomplete'");
+    expect(html).toContain('XAPIAdapter.completed');
+  });
+
+  it('xAPI index.html bridges sessionend → XAPIAdapter.terminate()', async () => {
+    const tmp = tmpDir();
+    const zipPath = makeTestZip(VALID_PROJECT);
+    const outPath = path.join(tmp, 'out.zip');
+    await publish({
+      inputPath: zipPath, outputPath: outPath, standard: 'xapi', quality: 'low',
+      lrsEndpoint: 'https://lrs.example.com/xapi', lrsAuth: 'Basic x',
+    });
+    const html = new AdmZip(outPath).getEntry('index.html')!.getData().toString('utf-8');
+    expect(html).toContain("'sessionend'");
+    expect(html).toContain('XAPIAdapter.terminate');
+  });
+});
