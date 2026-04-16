@@ -564,22 +564,37 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
         if (content) el.setAttribute('aria-label', content);
         break;
       case 'image':
+        if (!obj.src) {
+          el = this._buildMediaFallback(obj, 'image', false);
+          break;
+        }
         el = document.createElement('img');
-        el.setAttribute('src', obj.src || '');
+        el.setAttribute('src', obj.src);
         el.setAttribute('alt', obj.altText || '');
         el.setAttribute('loading', 'lazy');
+        this._wireMediaError(el, obj, 'image');
         break;
       case 'video':
+        if (!obj.src) {
+          el = this._buildMediaFallback(obj, 'video', false);
+          break;
+        }
         el = document.createElement('video');
-        el.setAttribute('src', obj.src || '');
+        el.setAttribute('src', obj.src);
         el.setAttribute('controls', '');
         el.setAttribute('preload', 'metadata');
+        this._wireMediaError(el, obj, 'video');
         break;
       case 'audio':
+        if (!obj.src) {
+          el = this._buildMediaFallback(obj, 'audio', false);
+          break;
+        }
         el = document.createElement('audio');
-        el.setAttribute('src', obj.src || '');
+        el.setAttribute('src', obj.src);
         el.setAttribute('controls', '');
         el.setAttribute('preload', 'metadata');
+        this._wireMediaError(el, obj, 'audio');
         break;
       case 'quiz':
         el = this._renderQuizQuestion(obj);
@@ -618,6 +633,59 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
     if (style.backgroundColor) el.style.backgroundColor = String(style.backgroundColor);
     if (style.lineHeight) el.style.lineHeight = String(style.lineHeight);
     if (style.opacity != null) el.style.opacity = String(style.opacity);
+  };
+
+  // ---- Media error fallbacks ----
+
+  // Replace a broken <img>/<video>/<audio> with a labelled <div> the
+  // moment the browser fires its 'error' event so the learner sees
+  // explanatory text instead of a broken-image icon. Also emits a
+  // 'mediaerror' event so a host integration can capture diagnostics.
+  PathfinderRuntime.prototype._wireMediaError = function(el, obj, kind) {
+    var self = this;
+    el.addEventListener('error', function() {
+      var fallback = self._buildMediaFallback(obj, kind, true);
+      // Carry over the data-object-id + data-layer-id + positioning
+      // from the original element so layout doesn't shift and the
+      // fallback is still findable by selectors that match the
+      // original.
+      fallback.setAttribute('data-object-id', obj.id);
+      var layerId = el.getAttribute('data-layer-id');
+      if (layerId) fallback.setAttribute('data-layer-id', layerId);
+      fallback.style.position = el.style.position;
+      fallback.style.left = el.style.left;
+      fallback.style.top = el.style.top;
+      fallback.style.width = el.style.width;
+      fallback.style.height = el.style.height;
+      if (el.parentNode) {
+        el.parentNode.replaceChild(fallback, el);
+      }
+      self._emit('mediaerror', {
+        objectId: obj.id,
+        type: kind,
+        src: obj.src || '',
+        altText: obj.altText || '',
+      });
+    });
+  };
+
+  PathfinderRuntime.prototype._buildMediaFallback = function(obj, kind, isError) {
+    var div = document.createElement('div');
+    var alt = obj.altText || '';
+    var label;
+    if (isError) {
+      label = (kind === 'image' ? 'Image' : kind === 'video' ? 'Video' : 'Audio') + ' not available';
+    } else {
+      label = alt; // empty-src + alt → render alt alone
+    }
+    div.textContent = alt ? (label + (isError ? ': ' + alt : '')) : label;
+    if (isError) div.setAttribute('data-media-error', 'true');
+    // Accessibility: announce as the same media role with an
+    // explanatory label so the screen reader still tells the user
+    // what they're missing.
+    if (kind === 'image') div.setAttribute('role', 'img');
+    div.setAttribute('aria-label', alt || label);
+    return div;
   };
 
   PathfinderRuntime.prototype._substitute = function(text) {
