@@ -44,6 +44,7 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
     // Quiz state — answers buffered per question until submitQuiz is fired.
     this.quizAnswers = {};
     this.lastQuizScore = null;
+    this.quizAttemptCount = 0;
 
     var nav = this.course.navigation || {};
     this.slideIds = (nav.slides || []).slice();
@@ -164,6 +165,11 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
     if (state.lastQuizScore && typeof state.lastQuizScore === 'object') {
       this.lastQuizScore = state.lastQuizScore;
     }
+
+    // Restore quiz attempt count so attempt limits hold across sessions.
+    if (typeof state.quizAttemptCount === 'number') {
+      this.quizAttemptCount = state.quizAttemptCount;
+    }
   };
 
   PathfinderRuntime.prototype.saveProgress = function() {
@@ -173,6 +179,7 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
       slide: this.getCurrentSlideId(),
       variables: this.variables,
       lastQuizScore: this.lastQuizScore,
+      quizAttemptCount: this.quizAttemptCount,
     };
     try {
       this.lmsAdapter.SaveSuspendData(snapshot);
@@ -682,6 +689,16 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
     return this.lastQuizScore;
   };
 
+  PathfinderRuntime.prototype.getQuizAttemptCount = function() {
+    return this.quizAttemptCount;
+  };
+
+  PathfinderRuntime.prototype.isQuizExhausted = function() {
+    var allowed = (this.course.quiz && this.course.quiz.attemptsAllowed) || 0;
+    if (allowed === 0) return false; // 0 = unlimited
+    return this.quizAttemptCount >= allowed;
+  };
+
   PathfinderRuntime.prototype._renderQuizQuestion = function(obj) {
     var question = this.questionsById[obj.questionId];
     if (!question) return null;
@@ -755,6 +772,15 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
     var quiz = this.course.quiz;
     if (!quiz || !quiz.questions || quiz.questions.length === 0) return;
 
+    if (this.isQuizExhausted()) {
+      this._emit('quizattemptsexceeded', {
+        attempts: this.quizAttemptCount,
+        allowed: quiz.attemptsAllowed,
+      });
+      return;
+    }
+    this.quizAttemptCount++;
+
     var raw = 0;
     var possible = 0;
     for (var i = 0; i < quiz.questions.length; i++) {
@@ -792,6 +818,10 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
         }
       }
     }
+
+    // Persist the new attempt count + score so they survive a session
+    // restart — attempt limits otherwise reset on every browser refresh.
+    this.saveProgress();
 
     this._emit('quizcomplete', score);
   };
