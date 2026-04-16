@@ -103,6 +103,31 @@ describe('Stage 3: compileCourseIR', () => {
     expect(obj.content).toBe('<p>Hello</p>');
   });
 
+  it('accepts "text" as an alias for content on text-type objects', () => {
+    const project = {
+      ...SIMPLE_PROJECT,
+      slides: [
+        {
+          id: 'slide-1',
+          title: 'T',
+          background: { type: 'solid', color: '#FFF' },
+          objects: {
+            heading: {
+              type: 'text',
+              rect: { x: 0, y: 0, w: 800, h: 60 },
+              text: 'Pathfinder Studio',
+            },
+          },
+          zOrder: ['heading'],
+          triggers: [],
+        },
+      ],
+    };
+    const ir = compileCourseIR(project, MANIFEST_EMPTY);
+    const obj = ir.slides[0].objects[0];
+    expect(obj.content).toBe('Pathfinder Studio');
+  });
+
   it('lifts per-object triggers into slide.triggers (resolved)', () => {
     const ir = compileCourseIR(SIMPLE_PROJECT, MANIFEST_EMPTY);
     const slide2 = ir.slides[1];

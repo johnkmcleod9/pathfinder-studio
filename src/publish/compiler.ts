@@ -172,7 +172,14 @@ function compileObject(
     id,
     type: asString(raw['type'], 'shape'),
     rect,
-    content: typeof raw['content'] === 'string' ? (raw['content'] as string) : typeof raw['label'] === 'string' ? (raw['label'] as string) : undefined,
+    content:
+      typeof raw['content'] === 'string'
+        ? (raw['content'] as string)
+        : typeof raw['label'] === 'string'
+          ? (raw['label'] as string)
+          : typeof raw['text'] === 'string'
+            ? (raw['text'] as string)
+            : undefined,
     style: (raw['style'] as Record<string, unknown> | undefined) ?? undefined,
     src: typeof raw['src'] === 'string' ? (raw['src'] as string) : undefined,
     altText: typeof raw['altText'] === 'string' ? (raw['altText'] as string) : undefined,
