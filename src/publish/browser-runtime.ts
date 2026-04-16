@@ -97,6 +97,70 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
     this._renderCurrentSlide();
     this._emit('slidechange', this.getCurrentSlideId(), this.currentIndex, this.slideIds.length);
     this._maybeAutoComplete();
+    this._bindKeyboard();
+  };
+
+  // ---- Keyboard navigation ----
+
+  // WCAG 2.1 AA requires keyboard operability. We bind on document so
+  // the listener works regardless of focus position. A course author
+  // can opt out via course.navigation.keyboard === false.
+  PathfinderRuntime.prototype._bindKeyboard = function() {
+    var nav = this.course.navigation || {};
+    if (nav.keyboard === false) return;
+    if (this._keyboardHandler) return; // already bound
+    var self = this;
+    this._keyboardHandler = function(e) {
+      // Skip when the user is typing in an editable field — quiz
+      // fill-in inputs need arrow keys for cursor movement.
+      var t = e.target;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' ||
+                t.isContentEditable)) {
+        return;
+      }
+      switch (e.key) {
+        case 'ArrowRight':
+        case 'PageDown':
+        case ' ':
+          self.navigateNext();
+          break;
+        case 'ArrowLeft':
+        case 'PageUp':
+          self.navigatePrev();
+          break;
+        case 'Home':
+          self._goToIndex(0);
+          break;
+        case 'End':
+          self._goToIndex(self.slideIds.length - 1);
+          break;
+        default:
+          return;
+      }
+      e.preventDefault();
+    };
+    if (typeof document !== 'undefined') {
+      document.addEventListener('keydown', this._keyboardHandler);
+    }
+  };
+
+  PathfinderRuntime.prototype._unbindKeyboard = function() {
+    if (this._keyboardHandler && typeof document !== 'undefined') {
+      document.removeEventListener('keydown', this._keyboardHandler);
+    }
+    this._keyboardHandler = null;
+  };
+
+  // Helper used by Home / End. Skips re-emit when target == current.
+  PathfinderRuntime.prototype._goToIndex = function(idx) {
+    if (idx < 0 || idx >= this.slideIds.length) return;
+    if (idx === this.currentIndex) return;
+    this._resetLayerVisibility(this.getCurrentSlideId());
+    this.currentIndex = idx;
+    this._renderCurrentSlide();
+    this._persistLocation();
+    this._emit('slidechange', this.getCurrentSlideId(), this.currentIndex, this.slideIds.length);
+    this._maybeAutoComplete();
   };
 
   // ---- Auto-completion ----
@@ -239,6 +303,10 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
     this.terminated = true;
 
     var elapsedMs = this.getSessionTime();
+
+    // Detach DOM listeners before pushing final state so a duplicate
+    // keypress mid-terminate can't trigger more navigation.
+    this._unbindKeyboard();
 
     // Flush latest state first so the suspend payload reflects the
     // exact moment of exit.
