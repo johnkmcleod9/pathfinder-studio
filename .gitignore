@@ -16,3 +16,7 @@ node_modules/.vite/
 dist/
 coverage/
 junit.xml
+
+# Local preview artifacts
+course-preview/
+course-preview.zip
