@@ -157,7 +157,7 @@ describe('VariableStore', () => {
 
     it('importProject returns warnings for failures', () => {
       store.define('n', 'number');
-      const { warnings } = store.importProject('{"n": "not-a-number"}');
+      store.importProject('{"n": "not-a-number"}');
       // string coerced to 0 (no warning for number type), but unknown key generates warning
       expect(store.get('n')).toBe(0);
     });

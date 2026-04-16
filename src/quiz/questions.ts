@@ -233,7 +233,8 @@ export function evaluateQuestion(
   attemptCount: number
 ): QuestionResult {
   // Check if attempts are exhausted
-  if (question.attemptsAllowed > 0 && attemptCount >= question.attemptsAllowed) {
+  const attemptsAllowed = question.attemptsAllowed ?? 0;
+  if (attemptsAllowed > 0 && attemptCount >= attemptsAllowed) {
     return {
       questionId: question.id,
       pointsAwarded: 0,
@@ -241,7 +242,7 @@ export function evaluateQuestion(
       correct: false,
       answered: false,
       attemptCount,
-      feedback: `No attempts remaining (${question.attemptsAllowed} used).`,
+      feedback: `No attempts remaining (${attemptsAllowed} used).`,
     };
   }
 

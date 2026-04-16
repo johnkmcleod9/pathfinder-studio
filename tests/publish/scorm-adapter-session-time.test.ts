@@ -21,11 +21,7 @@ interface FakeLms {
   commitCalls: number;
 }
 
-interface SandboxGlobal {
-  window?: Record<string, unknown>;
-  globalThis?: Record<string, unknown>;
-  console?: { warn: (...args: unknown[]) => void };
-}
+
 
 function evalAdapter(
   adapterSrc: string,

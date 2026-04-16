@@ -45,7 +45,7 @@ export interface Question {
   type: QuestionType;
   text: string;                    // Question stem (may contain %var% placeholders)
   points: number;                 // Max points for this question
-  attemptsAllowed: number;         // 0 = unlimited
+  attemptsAllowed?: number;        // 0 = unlimited (default: 0)
   options?: AnswerOption[];       // MC, multiple_response, matching, sequencing, hotspot, drag_drop
   correctAnswer?: string;          // fill_blank (text), true_false (true/false)
   correctRange?: NumericRange;    // numeric

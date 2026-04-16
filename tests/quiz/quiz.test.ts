@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { QuizEngine } from '../../src/quiz/engine.js';
 import { evaluateQuestion, evaluateMultipleChoice, evaluateMultipleResponse, evaluateTrueFalse, evaluateFillBlank, evaluateNumeric, evaluateMatching, evaluateSequencing, evaluateHotspot, evaluateDragDrop } from '../../src/quiz/questions.js';
-import type { QuizConfig, Question, QuestionResult } from '../../src/quiz/types.js';
+import type { QuizConfig, Question } from '../../src/quiz/types.js';
 
 const BASE_QUIZ: QuizConfig = {
   id: 'quiz-001',
@@ -128,7 +128,7 @@ describe('Quiz Engine', () => {
     it('submitAnswer still works for current attempt', () => {
       const q: Question = { id: 'q1', type: 'true_false', text: 'Q', points: 10, correctAnswer: 'true', options: [] };
       const quiz = makeQuiz({ questions: [q], attemptsAllowed: 1 });
-      const { attemptId } = quiz.startAttempt()!;
+      quiz.startAttempt();
       const result = quiz.submitAnswer('q1', 'true');
       expect(result).not.toBeNull();
       expect(result!.correct).toBe(true);
@@ -232,7 +232,7 @@ describe('Question Evaluators', () => {
     it('all correct selected → full credit', () => {
       const q: Question = {
         id: 'q1', type: 'multiple_response', text: 'Q1', points: 2,
-        options: [{ id: 'a', isCorrect: true }, { id: 'b', isCorrect: true }, { id: 'c', isCorrect: false }],
+        options: [{ id: 'a', text: 'A', isCorrect: true }, { id: 'b', text: 'B', isCorrect: true }, { id: 'c', text: 'C', isCorrect: false }],
       };
       const result = evaluateMultipleResponse(q, ['a', 'b']);
       expect(result.correct).toBe(true);
@@ -242,7 +242,7 @@ describe('Question Evaluators', () => {
     it('partial correct → partial credit', () => {
       const q: Question = {
         id: 'q1', type: 'multiple_response', text: 'Q1', points: 2,
-        options: [{ id: 'a', isCorrect: true }, { id: 'b', isCorrect: true }, { id: 'c', isCorrect: false }],
+        options: [{ id: 'a', text: 'A', isCorrect: true }, { id: 'b', text: 'B', isCorrect: true }, { id: 'c', text: 'C', isCorrect: false }],
         partialCredit: true,
       };
       const result = evaluateMultipleResponse(q, ['a']); // only 1 of 2 correct
@@ -252,7 +252,7 @@ describe('Question Evaluators', () => {
     it('incorrect selected → no credit', () => {
       const q: Question = {
         id: 'q1', type: 'multiple_response', text: 'Q1', points: 2,
-        options: [{ id: 'a', isCorrect: true }, { id: 'b', isCorrect: false }],
+        options: [{ id: 'a', text: 'A', isCorrect: true }, { id: 'b', text: 'B', isCorrect: false }],
       };
       const result = evaluateMultipleResponse(q, ['b']);
       expect(result.correct).toBe(false);
@@ -262,7 +262,7 @@ describe('Question Evaluators', () => {
     it('all-or-nothing mode rejects partial', () => {
       const q: Question = {
         id: 'q1', type: 'multiple_response', text: 'Q1', points: 2,
-        options: [{ id: 'a', isCorrect: true }, { id: 'b', isCorrect: true }],
+        options: [{ id: 'a', text: 'A', isCorrect: true }, { id: 'b', text: 'B', isCorrect: true }],
         partialCredit: false,
       };
       const result = evaluateMultipleResponse(q, ['a']); // only 1 of 2

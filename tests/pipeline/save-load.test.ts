@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import JSZip from 'jszip';
 import {
   saveProject,
@@ -257,8 +257,6 @@ describe('Manifest', () => {
     });
 
     it('same content = same hash regardless of filename', () => {
-      const buf = Buffer.from('content');
-      // hashPath includes base name, so paths differ; check the HASH is same
       expect(contentHash(Buffer.from('content'))).toBe(contentHash(Buffer.from('content')));
     });
   });

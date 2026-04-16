@@ -11,7 +11,6 @@ import { compileCourseIR, buildRuntimeCourse } from '../../src/publish/compiler.
 import type {
   CourseIR,
   RuntimeCourse,
-  OutputStandard,
 } from '../../src/publish/types.js';
 
 // ---- Fixtures ----

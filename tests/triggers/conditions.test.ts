@@ -172,7 +172,7 @@ describe('Conditions', () => {
           },
         ],
       };
-      expect(evaluateCondition(condition, vars)).toBe(true);
+      expect(evaluateCondition(condition as Parameters<typeof evaluateCondition>[0], vars)).toBe(true);
     });
   });
 
