@@ -378,23 +378,32 @@ export class PublishPipeline {
     const mediaDir = path.join(this.extractDir, 'media');
     const contentDir = path.join(this.extractDir, 'content');
     const dirs = [mediaDir, contentDir].filter((d) => fs.existsSync(d));
-    let total = 0;
-    let optimized = 0;
-    let bytesSaved = 0;
+
+    // Collect all media file paths first, then optimize in parallel.
+    const mediaPaths: string[] = [];
     for (const dir of dirs) {
       const files = fs.readdirSync(dir);
       for (const file of files) {
         const filePath = path.join(dir, file);
         const stat = fs.statSync(filePath);
-        if (!stat.isFile()) continue;
-        total++;
-        const result = await optimizeMedia(filePath, this.opts.quality);
-        if (result.optimized) {
-          optimized++;
-          bytesSaved += result.savedBytes;
-        }
+        if (stat.isFile()) mediaPaths.push(filePath);
       }
     }
+
+    const results = await Promise.all(
+      mediaPaths.map((filePath) => optimizeMedia(filePath, this.opts.quality))
+    );
+
+    let total = mediaPaths.length;
+    let optimized = 0;
+    let bytesSaved = 0;
+    for (const result of results) {
+      if (result.optimized) {
+        optimized++;
+        bytesSaved += result.savedBytes;
+      }
+    }
+
     this.report.mediaCount = total;
     this.report.mediaOptimized = optimized;
     this.report.mediaBytesSaved = bytesSaved;
