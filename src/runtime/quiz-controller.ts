@@ -10,8 +10,10 @@ export class QuizController {
 
   constructor(
     private quiz: RuntimeQuiz,
-    private variables: VariableStore
-  ) {}
+    _variables: VariableStore
+  ) {
+    void _variables;
+  }
 
   startAttempt(): QuizAttempt | null {
     if (this.attemptCount >= this.quiz.attemptsAllowed) return null;

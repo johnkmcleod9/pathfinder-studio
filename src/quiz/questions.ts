@@ -111,7 +111,7 @@ export function evaluateTrueFalse(
   question: Question,
   answer: string | boolean
 ): { correct: boolean; pointsAwarded: number; feedback?: string } {
-  const expected = question.correctAnswer === 'true' || question.correctAnswer === true;
+  const expected = question.correctAnswer === 'true' || (question.correctAnswer as unknown) === true;
   const given = answer === true || answer === 'true' || answer === 'True';
 
   const correct = given === expected;

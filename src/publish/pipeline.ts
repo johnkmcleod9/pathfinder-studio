@@ -219,7 +219,7 @@ export class PublishPipeline {
       const layers = slide['layers'] as Record<string, Record<string, unknown>>[] | undefined;
       if (layers) {
         for (const layer of layers) {
-          layerIds.add(layer['id'] as string);
+          layerIds.add(layer['id'] as unknown as string);
         }
       }
       if (objects) {

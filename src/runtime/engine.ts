@@ -184,9 +184,8 @@ export class PathfinderRuntime {
     return '#FFFFFF';
   }
 
-  private renderObject(obj: ReturnType<PathfinderRuntime['renderObject']> extends HTMLElement ? never : Parameters<PathfinderRuntime['renderObject']>[0]): HTMLElement {
-    // Type guard workaround — this is actually RuntimeObject
-    const o = obj as import('./types.js').RuntimeObject;
+  private renderObject(obj: import('./types.js').RuntimeObject): HTMLElement {
+    const o = obj;
     const el = document.createElement('div');
     el.setAttribute('data-object-id', o.id);
     el.style.cssText = `
@@ -243,7 +242,7 @@ export class PathfinderRuntime {
       this.navigation.goToSlide(state.currentSlide);
     }
     if (state.quiz && this.quiz) {
-      this.quiz.restoreState(state.quiz as { attempts: import('./types.js').QuizAttempt[] } as Parameters<QuizController['restoreState']>[0]);
+      this.quiz.restoreState(state.quiz as unknown as Parameters<QuizController['restoreState']>[0]);
     }
   }
 

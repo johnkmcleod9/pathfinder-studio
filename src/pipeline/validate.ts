@@ -2,8 +2,13 @@
  * Validate Pipeline — validate ZIP structure and project.json content.
  */
 
-import Ajv from 'ajv';
-import addFormats from 'ajv-formats';
+import AjvModule from 'ajv';
+import addFormatsModule from 'ajv-formats';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const Ajv = (AjvModule as any).default ?? AjvModule;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const addFormats = (addFormatsModule as any).default ?? addFormatsModule;
 import { readFile } from 'node:fs/promises';
 import JSZip from 'jszip';
 import type { SchemaValidateResult } from '../schemas/validate.js';
@@ -191,7 +196,7 @@ export function validateProjectSchema(project: unknown, schema: object): SchemaV
   const validate = ajv.compile(schema);
 
   const valid = validate(project);
-  const errors: ValidationIssue[] = (validate.errors ?? []).map(err => ({
+  const errors: ValidationIssue[] = (validate.errors ?? []).map((err: { instancePath?: string; message?: string; keyword: string; params?: unknown }) => ({
     path: err.instancePath || '/',
     message: err.message ?? 'unknown error',
     keyword: err.keyword,

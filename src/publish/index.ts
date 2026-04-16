@@ -64,7 +64,6 @@ export type {
   ConditionalBranchIR,
   QuizQuestionIR,
   QuizOptionIR,
-  NavigationIR,
   ImsMetadata,
   ImsSequencing,
   ImsRollupRule,
