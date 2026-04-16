@@ -20,6 +20,8 @@ import { dirname, resolve } from 'node:path';
 import { existsSync, readFileSync } from 'node:fs';
 import { publish } from './publish/index.js';
 import type { OutputStandard, QualityPreset } from './publish/types.js';
+import { parseProjectFile } from './pipeline/parse.js';
+import { compileCourseIR, buildRuntimeCourse } from './publish/compiler.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
@@ -88,13 +90,32 @@ Usage:
 
 Commands:
   publish <input.pathfinder>        Publish a .pathfinder ZIP to a target standard
+  inspect <input.pathfinder>        Show a tree view of slides/objects/quiz/issues
   validate <schema> <file>          Validate a JSON file against a schema
   validate --check-schemas          Validate all registered schemas are well-formed
   validate --strict                 Run strict validation on all schemas
   validate --self                   Self-validate all compiled schemas
   --help                            Show this help
 
-Run \`cli.ts publish --help\` for publish-specific options.
+Run \`cli.ts <command> --help\` for command-specific options.
+`;
+}
+
+function inspectHelp(): string {
+  return `Pathfinder Studio — inspect
+
+Usage:
+  cli.ts inspect <input.pathfinder> [--json]
+
+Required:
+  <input>      Path to a .pathfinder file
+
+Options:
+  --json       Emit machine-readable JSON instead of human tree view
+  -h, --help   Show this help
+
+Output sections:
+  Metadata, Slides, Variables, Quiz (if any), Issues (if any)
 `;
 }
 
@@ -434,6 +455,172 @@ function handleValidate(argv: string[], io: CliIO): number {
  * Run the CLI with the given args. Returns an exit code.
  * Does NOT call process.exit.
  */
+// ---- inspect ----
+
+interface InspectArgs {
+  input: string;
+  json: boolean;
+}
+
+function parseInspectArgs(argv: string[]): { ok: 'help' } | { ok: false; error: string } | { ok: true; args: InspectArgs } {
+  let input: string | undefined;
+  let json = false;
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a === '-h' || a === '--help') return { ok: 'help' };
+    if (a === '--json') { json = true; continue; }
+    if (a.startsWith('-')) return { ok: false, error: `Unknown option: ${a}` };
+    if (input === undefined) { input = a; continue; }
+    return { ok: false, error: `Unexpected positional argument: ${a}` };
+  }
+  if (!input) return { ok: false, error: 'Missing input file' };
+  return { ok: true, args: { input, json } };
+}
+
+interface InspectIssue { stage: string; code: string; message: string }
+
+interface InspectReport {
+  metadata: { id: string; title: string; author: string; language: string };
+  slides: Array<{ id: string; title: string; objectCount: number; triggerCount: number }>;
+  variables: Record<string, { type: string; default: unknown; scope: string }>;
+  quiz?: { id: string; questions: Array<{ id: string; type: string; points: number }>; passingScore: number; attemptsAllowed: number };
+  issues: InspectIssue[];
+}
+
+async function handleInspect(argv: string[], io: CliIO): Promise<number> {
+  const parsed = parseInspectArgs(argv);
+  if (parsed.ok === 'help') { io.stdout(inspectHelp()); return 0; }
+  if (parsed.ok === false) { io.stderr(`Error: ${parsed.error}\n\n${inspectHelp()}`); return 2; }
+
+  const args = parsed.args;
+  if (!existsSync(args.input)) {
+    io.stderr(`Error: Input file not found: "${args.input}"\n`);
+    return 1;
+  }
+
+  // Build the report. Collect issues from parse + compile rather than
+  // bailing on first error so the user sees as much of the course as
+  // possible even when something is broken.
+  const issues: InspectIssue[] = [];
+  let project: Record<string, unknown> | null = null;
+  let manifest: Record<string, unknown> = { version: '1.0', assets: {} };
+  try {
+    const parsedZip = await parseProjectFile(args.input);
+    project = parsedZip.project as Record<string, unknown>;
+    manifest = parsedZip.manifest as Record<string, unknown>;
+    for (const w of parsedZip.warnings ?? []) {
+      issues.push({ stage: 'parse', code: w.code, message: w.message });
+    }
+  } catch (err: unknown) {
+    const e = err as { code?: string; message: string };
+    issues.push({ stage: 'parse', code: e.code ?? 'PARSE_ERROR', message: e.message });
+  }
+
+  const report: InspectReport = project
+    ? buildInspectReport(project, manifest, issues)
+    : { metadata: { id: '', title: '', author: '', language: '' }, slides: [], variables: {}, issues };
+
+  if (args.json) {
+    io.stdout(JSON.stringify(report, null, 2) + '\n');
+    return 0;
+  }
+
+  io.stdout(formatInspectHuman(report));
+  return 0;
+}
+
+function buildInspectReport(
+  project: Record<string, unknown>,
+  manifest: Record<string, unknown>,
+  issues: InspectIssue[]
+): InspectReport {
+  let ir, rc;
+  try {
+    ir = compileCourseIR(project, manifest);
+    rc = buildRuntimeCourse(ir, { standard: 'html5' });
+  } catch (err: unknown) {
+    const e = err as Error;
+    issues.push({ stage: 'compile', code: 'COMPILE_ERROR', message: e.message });
+    return {
+      metadata: { id: '', title: '', author: '', language: '' },
+      slides: [], variables: {}, issues,
+    };
+  }
+
+  // Surface common authoring mistakes that the parser doesn't catch.
+  const slideIds = new Set(rc.slides.map((s) => s.id));
+  if (rc.navigation && !slideIds.has(rc.navigation.entry)) {
+    issues.push({
+      stage: 'compile', code: 'INVALID_ENTRY_SLIDE',
+      message: `Entry slide "${rc.navigation.entry}" is not in the slides list`,
+    });
+  }
+  for (const s of rc.slides) {
+    if (!s.id) {
+      issues.push({ stage: 'compile', code: 'SLIDE_MISSING_ID', message: 'Slide is missing its id' });
+    }
+  }
+
+  const out: InspectReport = {
+    metadata: rc.metadata,
+    slides: rc.slides.map((s) => ({
+      id: s.id,
+      title: s.title || '',
+      objectCount: (s.objects ?? []).length,
+      triggerCount: (s.triggers ?? []).length,
+    })),
+    variables: rc.variables,
+    issues,
+  };
+  if (rc.quiz) {
+    out.quiz = {
+      id: rc.quiz.id,
+      passingScore: rc.quiz.passingScore,
+      attemptsAllowed: rc.quiz.attemptsAllowed,
+      questions: rc.quiz.questions.map((q) => ({ id: q.id, type: q.type, points: q.points })),
+    };
+  }
+  return out;
+}
+
+function formatInspectHuman(r: InspectReport): string {
+  const lines: string[] = [];
+  lines.push(`${r.metadata.title || '(untitled)'}  [${r.metadata.id || '(no id)'}]`);
+  if (r.metadata.author) lines.push(`  author: ${r.metadata.author}`);
+  if (r.metadata.language) lines.push(`  lang:   ${r.metadata.language}`);
+  lines.push('');
+  lines.push(`Slides: ${r.slides.length} slide${r.slides.length === 1 ? '' : 's'}`);
+  for (const s of r.slides) {
+    lines.push(`  - ${s.id.padEnd(20)} ${s.title}`);
+    lines.push(`      objects: ${s.objectCount}, triggers: ${s.triggerCount}`);
+  }
+  lines.push('');
+  const varNames = Object.keys(r.variables);
+  lines.push(`Variables: ${varNames.length}`);
+  for (const name of varNames) {
+    const v = r.variables[name];
+    lines.push(`  - ${name.padEnd(20)} ${v.type.padEnd(10)} default=${JSON.stringify(v.default)}  scope=${v.scope}`);
+  }
+  if (r.quiz) {
+    lines.push('');
+    lines.push(`Quiz: "${r.quiz.id}" — ${r.quiz.questions.length} question${r.quiz.questions.length === 1 ? '' : 's'}`);
+    lines.push(`  passing score: ${r.quiz.passingScore}, attempts allowed: ${r.quiz.attemptsAllowed === 0 ? 'unlimited' : r.quiz.attemptsAllowed}`);
+    for (const q of r.quiz.questions) {
+      lines.push(`  - ${q.id.padEnd(15)} ${q.type.padEnd(20)} (${q.points} pts)`);
+    }
+  }
+  if (r.issues.length > 0) {
+    lines.push('');
+    lines.push(`Issues: ${r.issues.length}`);
+    for (const i of r.issues) {
+      lines.push(`  [${i.stage}] ${i.code}: ${i.message}`);
+    }
+  }
+  return lines.join('\n') + '\n';
+}
+
+// ---- runCli ----
+
 export async function runCli(argv: string[], io?: Partial<CliIO>): Promise<number> {
   const fullIO: CliIO = {
     stdout: io?.stdout ?? ((s: string) => { process.stdout.write(s); }),
@@ -449,6 +636,10 @@ export async function runCli(argv: string[], io?: Partial<CliIO>): Promise<numbe
 
   if (command === 'publish') {
     return handlePublish(argv.slice(1), fullIO);
+  }
+
+  if (command === 'inspect') {
+    return handleInspect(argv.slice(1), fullIO);
   }
 
   if (command === 'validate') {
