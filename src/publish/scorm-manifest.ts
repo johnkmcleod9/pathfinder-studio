@@ -539,13 +539,28 @@ export const SCORM_2004_ADAPTER = `/**
     return GetValue('cmi.learner_id');
   }
 
+  // SCORM 2004 cmi.session_time uses ISO 8601 duration: PT#H#M#S
+  // where any zero-valued component may be omitted.
+  function SaveSessionTime(elapsedMs) {
+    var totalSec = Math.max(0, Math.floor(elapsedMs / 1000));
+    var h = Math.floor(totalSec / 3600);
+    var m = Math.floor((totalSec % 3600) / 60);
+    var s = totalSec % 60;
+    var parts = 'PT';
+    if (h) parts += h + 'H';
+    if (m) parts += m + 'M';
+    if (s || (!h && !m)) parts += s + 'S';
+    SetValue('cmi.session_time', parts);
+    Commit('');
+  }
+
   // ---- Export ----
 
   global.SCORM2004Adapter = {
     Initialize, Terminate, GetValue, SetValue, Commit,
     GetLastError, GetErrorString, GetDiagnostic,
     SaveLocation, SaveScore, SaveCompletion, SaveSuccess,
-    SaveSuspendData, LoadSuspendData,
+    SaveSuspendData, LoadSuspendData, SaveSessionTime,
     GetLearnerName, GetLearnerId,
     get initialized() { return initialized; },
     get terminated() { return terminated; },
@@ -727,10 +742,27 @@ export const SCORM_12_ADAPTER = `/**
   function GetLearnerName() { return GetValue('cmi.core.learner_name'); }
   function GetLearnerId() { return GetValue('cmi.core.student_id'); }
 
+  // SCORM 1.2 cmi.core.session_time format: HHHH:MM:SS.SS
+  // (max 9999 hours; centisecond precision).
+  function SaveSessionTime(elapsedMs) {
+    var totalSec = Math.max(0, elapsedMs / 1000);
+    var h = Math.floor(totalSec / 3600);
+    var m = Math.floor((totalSec % 3600) / 60);
+    var s = totalSec - (h * 3600) - (m * 60);
+    function pad(n) { return n < 10 ? '0' + n : '' + n; }
+    var hh = h < 10 ? '0' + h : '' + h;
+    // SS field needs zero-padded integer part: '07.50' not '7.50'.
+    var sStr = s.toFixed(2);
+    if (s < 10) sStr = '0' + sStr;
+    var formatted = hh + ':' + pad(m) + ':' + sStr;
+    SetValue('cmi.core.session_time', formatted);
+    Commit('');
+  }
+
   global.SCORM12Adapter = {
     Initialize, Terminate, GetValue, SetValue, Commit,
     GetLastError, GetErrorString, GetDiagnostic,
-    SaveLocation, SaveScore, SaveCompletion, SaveSuspendData, LoadSuspendData,
+    SaveLocation, SaveScore, SaveCompletion, SaveSuspendData, LoadSuspendData, SaveSessionTime,
     GetLearnerName, GetLearnerId,
     get initialized() { return initialized; },
     get terminated() { return terminated; },

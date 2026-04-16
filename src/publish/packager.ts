@@ -323,6 +323,16 @@ function buildPlayerShell(standard: OutputStandard, cfg: PlayerShellConfig = {})
       runtime.on('slidechange', function(slideId, idx, total) {
         document.getElementById('slide-counter').textContent = (idx + 1) + ' / ' + total;
       });
+      // Bind exit hooks so session_time + Terminate are pushed
+      // even when the learner just closes the tab.  We bind both
+      // beforeunload and visibilitychange because some browsers
+      // (mobile Safari especially) skip beforeunload on tab swipe.
+      var doTerminate = function() { try { runtime.terminate(); } catch (_) {} };
+      window.addEventListener('beforeunload', doTerminate);
+      window.addEventListener('pagehide', doTerminate);
+      document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'hidden') doTerminate();
+      });
     }
 
     window.addEventListener('load', loadCourse);
@@ -424,6 +434,9 @@ function buildHtml5Index(): string {
         });
         document.getElementById('btn-prev').onclick = function() { runtime.navigatePrev(); };
         document.getElementById('btn-next').onclick = function() { runtime.navigateNext(); };
+        var doTerminate = function() { try { runtime.terminate(); } catch (_) {} };
+        window.addEventListener('beforeunload', doTerminate);
+        window.addEventListener('pagehide', doTerminate);
       });
   </script>
 </body>
@@ -486,6 +499,9 @@ function buildXapiIndex(): string {
         });
         document.getElementById('btn-prev').onclick = function() { runtime.navigatePrev(); };
         document.getElementById('btn-next').onclick = function() { runtime.navigateNext(); };
+        var doTerminate = function() { try { runtime.terminate(); } catch (_) {} };
+        window.addEventListener('beforeunload', doTerminate);
+        window.addEventListener('pagehide', doTerminate);
       });
   </script>
 </body>

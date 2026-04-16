@@ -409,3 +409,41 @@ describe('Stage 6: Package — xAPI specific artifacts', () => {
     expect(tincan).not.toContain('pathfinder.local');
   });
 });
+
+describe('Stage 6: Package — terminate() wired to browser unload', () => {
+  it('html5 index.html binds runtime.terminate() to beforeunload', async () => {
+    const tmp = tmpDir();
+    const zipPath = makeTestZip(VALID_PROJECT);
+    const outPath = path.join(tmp, 'out.zip');
+    await publish({ inputPath: zipPath, outputPath: outPath, standard: 'html5', quality: 'low' });
+    const html = new AdmZip(outPath).getEntry('index.html')!.getData().toString('utf-8');
+    expect(html).toContain('runtime.terminate');
+    expect(html).toContain("'beforeunload'");
+  });
+
+  it('xapi index.html binds runtime.terminate() to beforeunload', async () => {
+    const tmp = tmpDir();
+    const zipPath = makeTestZip(VALID_PROJECT);
+    const outPath = path.join(tmp, 'out.zip');
+    await publish({
+      inputPath: zipPath, outputPath: outPath, standard: 'xapi', quality: 'low',
+      lrsEndpoint: 'https://lrs.example.com/xapi', lrsAuth: 'Basic x',
+    });
+    const html = new AdmZip(outPath).getEntry('index.html')!.getData().toString('utf-8');
+    expect(html).toContain('runtime.terminate');
+    expect(html).toContain("'beforeunload'");
+  });
+
+  it('SCORM player-shell binds runtime.terminate() to beforeunload + visibilitychange', async () => {
+    const tmp = tmpDir();
+    const zipPath = makeTestZip(VALID_PROJECT);
+    const outPath = path.join(tmp, 'out.zip');
+    await publish({
+      inputPath: zipPath, outputPath: outPath, standard: 'scorm12', quality: 'low',
+    });
+    const html = new AdmZip(outPath).getEntry('player/player-shell.html')!.getData().toString('utf-8');
+    expect(html).toContain('runtime.terminate');
+    expect(html).toContain("'beforeunload'");
+    expect(html).toContain("'visibilitychange'");
+  });
+});
