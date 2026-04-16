@@ -72,6 +72,12 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
     this.sessionStartTime = Date.now();
     this.terminated = false;
 
+    // Auto-completion bookkeeping. completed=true once SaveCompletion
+    // has been pushed (either via reaching the last slide on an
+    // info-only course or via quiz submission); guards against
+    // duplicate writes / re-emits.
+    this.completed = false;
+
     // Build a question lookup so quiz objects can resolve their question by id.
     this.questionsById = {};
     var quiz = this.course.quiz;
@@ -89,6 +95,39 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
     this._restoreFromLms();
     this._renderCurrentSlide();
     this._emit('slidechange', this.getCurrentSlideId(), this.currentIndex, this.slideIds.length);
+    this._maybeAutoComplete();
+  };
+
+  // ---- Auto-completion ----
+
+  PathfinderRuntime.prototype.isComplete = function() {
+    return this.completed === true;
+  };
+
+  // Mark the course complete the first time the learner reaches the
+  // last slide of an info-only course (no quiz). Quiz courses leave
+  // completion to the quizcomplete path so we don't overwrite the
+  // pass/fail verdict.
+  PathfinderRuntime.prototype._maybeAutoComplete = function() {
+    if (this.completed) return;
+    if (this.course.quiz) return; // quiz drives completion separately
+    if (this.currentIndex !== this.slideIds.length - 1) return;
+    this._markComplete();
+  };
+
+  PathfinderRuntime.prototype._markComplete = function() {
+    if (this.completed) return;
+    this.completed = true;
+    if (this.lmsAdapter && typeof this.lmsAdapter.SaveCompletion === 'function') {
+      try {
+        this.lmsAdapter.SaveCompletion('completed');
+      } catch (e) {
+        if (typeof console !== 'undefined' && console.warn) {
+          console.warn('[PathfinderRuntime] SaveCompletion threw:', e);
+        }
+      }
+    }
+    this._emit('coursecomplete', { slideId: this.getCurrentSlideId() });
   };
 
   // ---- Resume / suspend-data ----
@@ -165,6 +204,7 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
       this._renderCurrentSlide();
       this._persistLocation();
       this._emit('slidechange', this.getCurrentSlideId(), this.currentIndex, this.slideIds.length);
+      this._maybeAutoComplete();
     }
   };
 
@@ -610,6 +650,7 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
           this._renderCurrentSlide();
           this._persistLocation();
           this._emit('slidechange', this.getCurrentSlideId(), this.currentIndex, this.slideIds.length);
+          this._maybeAutoComplete();
         }
         return;
       }
