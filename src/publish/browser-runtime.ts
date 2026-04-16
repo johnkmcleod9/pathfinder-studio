@@ -439,6 +439,13 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
     wrapper.style.height = canvas.height + 'px';
     wrapper.style.overflow = 'hidden';
     wrapper.style.background = this._renderBackground(slide.background);
+    // ARIA: announce the slide as a labelled live region so a screen
+    // reader user knows where they are after each navigation.
+    wrapper.setAttribute('role', 'region');
+    wrapper.setAttribute('aria-live', 'polite');
+    var slideTitle = slide.title || slide.id;
+    wrapper.setAttribute('aria-label',
+      'Slide ' + (this.currentIndex + 1) + ' of ' + this.slideIds.length + ': ' + slideTitle);
 
     var objects = slide.objects || [];
     for (var i = 0; i < objects.length; i++) {
@@ -554,6 +561,7 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
       case 'button':
         el = document.createElement('button');
         el.textContent = content;
+        if (content) el.setAttribute('aria-label', content);
         break;
       case 'image':
         el = document.createElement('img');
@@ -580,7 +588,13 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
       case 'shape':
       default:
         el = document.createElement('div');
-        if (content) el.innerHTML = content;
+        if (content) {
+          el.innerHTML = content;
+        } else {
+          // Pure-decoration shape — hide from screen readers so the
+          // user doesn't hear meaningless layout boxes.
+          el.setAttribute('aria-hidden', 'true');
+        }
     }
 
     el.setAttribute('data-object-id', obj.id);
@@ -774,10 +788,14 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
     var root = document.createElement('div');
     root.setAttribute('data-question-id', question.id);
 
-    var stem = document.createElement('div');
-    stem.className = 'pf-question-text';
-    stem.textContent = this._substitute(String(question.text || ''));
-    root.appendChild(stem);
+    // <fieldset><legend> groups the options so a screen reader reads
+    // "Question text — option 1, option 2..." instead of an
+    // unrelated stem div followed by stray radios.
+    var fieldset = document.createElement('fieldset');
+    var legend = document.createElement('legend');
+    legend.className = 'pf-question-text';
+    legend.textContent = this._substitute(String(question.text || ''));
+    fieldset.appendChild(legend);
 
     var listEl = document.createElement('div');
     listEl.className = 'pf-question-options';
@@ -790,9 +808,12 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
         var label = document.createElement('label');
         label.style.display = 'block';
         var input = document.createElement('input');
+        var inputId = 'pf-' + question.id + '-' + opt.id;
         input.type = 'radio';
         input.name = radioName;
         input.value = opt.id;
+        input.id = inputId;
+        label.setAttribute('for', inputId);
         input.addEventListener('change', (function(qid, oid) {
           return function() { self.quizAnswers[qid] = oid; };
         })(question.id, opt.id));
@@ -807,8 +828,11 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
         var labelM = document.createElement('label');
         labelM.style.display = 'block';
         var inputM = document.createElement('input');
+        var inputMId = 'pf-' + question.id + '-' + optM.id;
         inputM.type = 'checkbox';
         inputM.value = optM.id;
+        inputM.id = inputMId;
+        labelM.setAttribute('for', inputMId);
         inputM.addEventListener('change', (function(qid, oid) {
           return function(e) {
             var arr = self.quizAnswers[qid];
@@ -826,13 +850,17 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
     } else if (question.type === 'fill_blank' || question.type === 'numeric') {
       var input2 = document.createElement('input');
       input2.type = 'text';
+      var input2Id = 'pf-' + question.id + '-fill';
+      input2.id = input2Id;
+      input2.setAttribute('aria-labelledby', legend.id || (legend.id = input2Id + '-label'));
       input2.addEventListener('input', (function(qid) {
         return function(e) { self.quizAnswers[qid] = e.target.value; };
       })(question.id));
       listEl.appendChild(input2);
     }
 
-    root.appendChild(listEl);
+    fieldset.appendChild(listEl);
+    root.appendChild(fieldset);
     return root;
   };
 
