@@ -5,9 +5,25 @@
 
 import { OutputStandard, ImsManifest, ImsOrganization, ImsItem, ImsResource, ImsMetadata } from './types.js';
 
-const SCORM2004_NAMESPACE = 'http://www.imsglobal.org/xsd/imscp_v1p1';
-const SCORM2004_XSI = 'http://www.w3.org/2001/XMLSchema-instance';
-const SCORM2004_LOC = 'http://www.imsglobal.org/xsd/imscp_v1p1.xsd';
+// SCORM 2004 4th Edition CAM namespaces. Every prefix used in the
+// rendered manifest must be declared in the root <manifest> element.
+const IMSCP_NS = 'http://www.imsglobal.org/xsd/imscp_v1p1';
+const ADLCP_NS = 'http://www.adlnet.org/xsd/adlcp_v1p3';
+const ADLSEQ_NS = 'http://www.adlnet.org/xsd/adlseq_v1p3';
+const ADLNAV_NS = 'http://www.adlnet.org/xsd/adlnav_v1p3';
+const IMSSS_NS = 'http://www.imsglobal.org/xsd/imsss';
+const XSI_NS = 'http://www.w3.org/2001/XMLSchema-instance';
+
+// xsi:schemaLocation is a whitespace-separated list of (namespace, xsd)
+// pairs. Linking each declared namespace lets validators load the right
+// XSD without having to guess.
+const SCORM2004_SCHEMA_LOCATION = [
+  `${IMSCP_NS} imscp_v1p1.xsd`,
+  `${ADLCP_NS} adlcp_v1p3.xsd`,
+  `${ADLSEQ_NS} adlseq_v1p3.xsd`,
+  `${ADLNAV_NS} adlnav_v1p3.xsd`,
+  `${IMSSS_NS} imsss_v1p0.xsd`,
+].join(' ');
 
 export function buildScormManifest(
   projectId: string,
@@ -95,111 +111,173 @@ export function buildScormManifest(
 
 /**
  * Render an imsmanifest.xml string from a manifest object.
+ *
+ * SCORM 2004 4th Edition CAM-compliant: declares all required ADL and
+ * IMSSS namespaces; emits adlcp:scormType as a <resource> attribute
+ * (not a child); wraps mastery-score objectives in imsss:sequencing.
  */
 export function renderManifestXml(manifest: ImsManifest, standard: OutputStandard): string {
-  const escape = (s: string) =>
-    s
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
+  return standard === 'scorm2004'
+    ? renderScorm2004Manifest(manifest)
+    : renderScorm12Manifest(manifest);
+}
 
-  const ns = standard === 'scorm2004' ? SCORM2004_NAMESPACE : 'http://www.imsglobal.org/xsd/imscp_v1p1';
-  const xsi = standard === 'scorm2004' ? SCORM2004_XSI : '';
-  const schemaLoc = standard === 'scorm2004'
-    ? `http://www.imsglobal.org/xsd/imscp_v1p1 ${SCORM2004_LOC}`
-    : '';
+function escapeXml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
 
-  const renderMetadata = (m?: ImsMetadata) => {
-    if (!m) return '      <metadata/>';
-    return `      <metadata>
-        <schema>${escape(standard === 'scorm2004' ? 'IMS Content Packaging' : 'IMS CP')}</schema>
-        <schemaversion>${escape(standard === 'scorm2004' ? '1.0' : '1.1.2')}</schemaversion>${m.title ? `\n        <lom><general><title><langstring>${escape(m.title)}</langstring></title></general></lom>` : ''}
-      </metadata>`;
-  };
+// ---- SCORM 2004 4th Edition ----
 
-  const renderItems = (items: ImsItem[], indent = '      '): string => {
-    return items
-      .map((item) => {
-        let xml = `${indent}<item identifier="${escape(item.identifier)}"${item.resource ? ` identifierref="${escape(item.resource)}"` : ''}>\n`;
-        xml += `${indent}  <title>${escape(item.title)}</title>\n`;
-        if (standard === 'scorm2004') {
-          if (item.parameters) {
-            xml += `${indent}  <parameters>${escape(item.parameters)}</parameters>\n`;
-          }
-          if (item.objectives && item.objectives.length > 0) {
-            xml += `${indent}  <objectives>\n`;
-            for (const obj of item.objectives) {
-              xml += `${indent}    <objective id="${escape(obj.id)}"${obj.satisfiedByMeasure ? ' satisfiedByMeasure="true"' : ''}>\n`;
-              xml += `${indent}      <minNormalizedMeasure>${obj.minNormalizedMeasure}</minNormalizedMeasure>\n`;
-              xml += `${indent}    </objective>\n`;
-            }
-            xml += `${indent}  </objectives>\n`;
-          }
-        }
-        if (item.children) {
-          xml += renderItems(item.children, indent + '  ');
-        }
-        xml += `${indent}</item>\n`;
-        return xml;
-      })
-      .join('');
-  };
+function renderScorm2004Manifest(manifest: ImsManifest): string {
+  const id = escapeXml(manifest.identifier);
+  const ver = escapeXml(manifest.version);
+  const orgs = manifest.organizations
+    .map((o) => render2004Organization(o))
+    .join('');
+  const resources = manifest.resources
+    .map((r) => render2004Resource(r))
+    .join('');
 
-  const renderResources = (resources: ImsResource[]): string => {
-    return resources
-      .map((res) => {
-        let xml = `      <resource identifier="${escape(res.identifier)}" type="${escape(res.type)}"${res.href ? ` href="${escape(res.href)}"` : ''}>\n`;
-        xml += renderMetadata(res.metadata);
-        if (res.files.length > 0) {
-          xml += `        <file href="${escape(res.files[0])}"/>\n`;
-          for (const file of res.files.slice(1)) {
-            xml += `        <file href="${escape(file)}"/>\n`;
-          }
-        }
-        if (standard === 'scorm2004' && res.adlcpScormType) {
-          xml += `        <adlcp:scormType>${escape(res.adlcpScormType)}</adlcp:scormType>\n`;
-        }
-        xml += `      </resource>\n`;
-        return xml;
-      })
-      .join('');
-  };
+  return (
+    `<?xml version="1.0" encoding="UTF-8"?>\n` +
+    `<manifest identifier="${id}" version="${ver}"\n` +
+    `          xmlns="${IMSCP_NS}"\n` +
+    `          xmlns:adlcp="${ADLCP_NS}"\n` +
+    `          xmlns:adlseq="${ADLSEQ_NS}"\n` +
+    `          xmlns:adlnav="${ADLNAV_NS}"\n` +
+    `          xmlns:imsss="${IMSSS_NS}"\n` +
+    `          xmlns:xsi="${XSI_NS}"\n` +
+    `          xsi:schemaLocation="${SCORM2004_SCHEMA_LOCATION}">\n` +
+    render2004Metadata() +
+    `  <organizations default="${manifest.organizations[0]?.identifier ?? 'ORG_1'}">\n` +
+    orgs +
+    `  </organizations>\n` +
+    `  <resources>\n` +
+    resources +
+    `  </resources>\n` +
+    `</manifest>\n`
+  );
+}
 
-  let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
-  if (standard === 'scorm2004') {
-    xml += `<manifest identifier="${escape(manifest.identifier)}"`;
-    xml += ` version="${escape(manifest.version)}"`;
-    xml += ` xmlns="http://www.imsglobal.org/xsd/imscp_v1p1"`;
-    xml += ` xmlns:xsi="${xsi}"`;
-    xml += ` xsi:schemaLocation="${schemaLoc}">\n`;
-    // Add namespace declarations
-    xml += `  <metadata>${renderMetadata(manifest.metadata).trim().replace('      <metadata>', '').replace('</metadata>', '')}</metadata>\n`;
-    // Organizations
-    for (const org of manifest.organizations) {
-      xml += `  <organizations default="ORG_1">\n`;
-      xml += `    <organization identifier="${escape(org.identifier)}"${org.structure ? ` structure="${escape(org.structure)}"` : ''}>\n`;
-      xml += `      <title>${escape(org.title)}</title>\n`;
-      xml += renderItems(org.items, '        ');
-      xml += `    </organization>\n`;
-      xml += `  </organizations>\n`;
-    }
-    // Resources
-    xml += `  <resources>\n`;
-    xml += renderResources(manifest.resources);
-    xml += `  </resources>\n`;
-    xml += `</manifest>\n`;
-  } else {
-    // SCORM 1.2 manifest
-    xml += `<manifest identifier="${escape(manifest.identifier)}" version="${escape(manifest.version)}">\n`;
-    xml += `  ${renderMetadata(manifest.metadata)}\n`;
-    xml += `  <organizations default="ORG_1"/>\n`;
-    xml += `  <resources>\n`;
-    xml += renderResources(manifest.resources);
-    xml += `  </resources>\n`;
-    xml += `</manifest>\n`;
+function render2004Metadata(): string {
+  // The package-level metadata is small and fixed: SCORM 2004 4th Ed
+  // requires only the schema name + schemaversion. Extra LOM goes on
+  // individual resources, not the root.
+  return (
+    `  <metadata>\n` +
+    `    <schema>ADL SCORM</schema>\n` +
+    `    <schemaversion>2004 4th Edition</schemaversion>\n` +
+    `  </metadata>\n`
+  );
+}
+
+function render2004Organization(org: ImsOrganization): string {
+  const id = escapeXml(org.identifier);
+  const struct = org.structure ? ` structure="${escapeXml(org.structure)}"` : '';
+  let xml = `    <organization identifier="${id}"${struct}>\n`;
+  xml += `      <title>${escapeXml(org.title)}</title>\n`;
+  xml += render2004Items(org.items, '      ');
+  xml += `    </organization>\n`;
+  return xml;
+}
+
+function render2004Items(items: ImsItem[], indent: string): string {
+  return items
+    .map((item) => {
+      const id = escapeXml(item.identifier);
+      const ref = item.resource ? ` identifierref="${escapeXml(item.resource)}"` : '';
+      let xml = `${indent}<item identifier="${id}"${ref}>\n`;
+      xml += `${indent}  <title>${escapeXml(item.title)}</title>\n`;
+      if (item.parameters) {
+        xml += `${indent}  <adlcp:dataFromLMS>${escapeXml(item.parameters)}</adlcp:dataFromLMS>\n`;
+      }
+      if (item.objectives && item.objectives.length > 0) {
+        xml += render2004Sequencing(item.objectives, indent + '  ');
+      }
+      if (item.children && item.children.length > 0) {
+        xml += render2004Items(item.children, indent + '  ');
+      }
+      xml += `${indent}</item>\n`;
+      return xml;
+    })
+    .join('');
+}
+
+function render2004Sequencing(
+  objectives: NonNullable<ImsItem['objectives']>,
+  indent: string
+): string {
+  // Per SCORM 2004 4th Ed, item-level objectives live inside an
+  // <imsss:sequencing>/<imsss:objectives> block. The first objective
+  // is the primary; satisfiedByMeasure + minNormalizedMeasure encode
+  // the mastery score threshold.
+  const primary = objectives[0];
+  let xml = `${indent}<imsss:sequencing>\n`;
+  xml += `${indent}  <imsss:objectives>\n`;
+  xml += `${indent}    <imsss:primaryObjective objectiveID="${escapeXml(primary.id)}"`;
+  if (primary.satisfiedByMeasure) xml += ` satisfiedByMeasure="true"`;
+  xml += `>\n`;
+  xml += `${indent}      <imsss:minNormalizedMeasure>${primary.minNormalizedMeasure}</imsss:minNormalizedMeasure>\n`;
+  xml += `${indent}    </imsss:primaryObjective>\n`;
+  for (const obj of objectives.slice(1)) {
+    xml += `${indent}    <imsss:objective objectiveID="${escapeXml(obj.id)}">\n`;
+    xml += `${indent}      <imsss:minNormalizedMeasure>${obj.minNormalizedMeasure}</imsss:minNormalizedMeasure>\n`;
+    xml += `${indent}    </imsss:objective>\n`;
   }
+  xml += `${indent}  </imsss:objectives>\n`;
+  xml += `${indent}</imsss:sequencing>\n`;
+  return xml;
+}
 
+function render2004Resource(res: ImsResource): string {
+  const id = escapeXml(res.identifier);
+  const type = escapeXml(res.type);
+  const href = res.href ? ` href="${escapeXml(res.href)}"` : '';
+  // adlcp:scormType is an attribute on <resource>, not a child element.
+  const scormType = res.adlcpScormType
+    ? ` adlcp:scormType="${escapeXml(res.adlcpScormType)}"`
+    : '';
+  let xml = `    <resource identifier="${id}" type="${type}"${scormType}${href}>\n`;
+  for (const file of res.files) {
+    xml += `      <file href="${escapeXml(file)}"/>\n`;
+  }
+  xml += `    </resource>\n`;
+  return xml;
+}
+
+// ---- SCORM 1.2 ----
+
+function renderScorm12Manifest(manifest: ImsManifest): string {
+  const id = escapeXml(manifest.identifier);
+  const ver = escapeXml(manifest.version);
+  const meta = manifest.metadata;
+  let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+  xml += `<manifest identifier="${id}" version="${ver}">\n`;
+  xml += `  <metadata>\n`;
+  xml += `    <schema>IMS Content</schema>\n`;
+  xml += `    <schemaversion>1.1.2</schemaversion>\n`;
+  if (meta?.title) {
+    xml += `    <lom><general><title><langstring>${escapeXml(meta.title)}</langstring></title></general></lom>\n`;
+  }
+  xml += `  </metadata>\n`;
+  xml += `  <organizations default="ORG_1"/>\n`;
+  xml += `  <resources>\n`;
+  for (const res of manifest.resources) {
+    const rid = escapeXml(res.identifier);
+    const type = escapeXml(res.type);
+    const href = res.href ? ` href="${escapeXml(res.href)}"` : '';
+    xml += `    <resource identifier="${rid}" type="${type}"${href}>\n`;
+    for (const file of res.files) {
+      xml += `      <file href="${escapeXml(file)}"/>\n`;
+    }
+    xml += `    </resource>\n`;
+  }
+  xml += `  </resources>\n`;
+  xml += `</manifest>\n`;
   return xml;
 }
 
