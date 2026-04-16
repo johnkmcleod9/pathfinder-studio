@@ -26,6 +26,8 @@ export {
 
 export { assemblePackage } from './packager.js';
 
+export { STAGE_NAMES } from './types.js';
+
 export type {
   PublishOptions,
   PublishReport,

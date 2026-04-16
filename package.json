@@ -1,13 +1,59 @@
 {
   "name": "pathfinder-studio",
   "version": "0.1.0",
-  "description": "JSON schema library for .pathfinder project file format",
+  "description": "Library + CLI for the .pathfinder course file format — parse, compile, publish to SCORM 1.2 / 2004 / xAPI / HTML5",
   "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
+    },
+    "./publish": {
+      "types": "./src/publish/index.ts",
+      "import": "./src/publish/index.ts"
+    },
+    "./pipeline": {
+      "types": "./src/pipeline/index.ts",
+      "import": "./src/pipeline/index.ts"
+    },
+    "./runtime": {
+      "types": "./src/runtime/index.ts",
+      "import": "./src/runtime/index.ts"
+    },
+    "./quiz": {
+      "types": "./src/quiz/index.ts",
+      "import": "./src/quiz/index.ts"
+    },
+    "./variables": {
+      "types": "./src/variables/index.ts",
+      "import": "./src/variables/index.ts"
+    },
+    "./triggers": {
+      "types": "./src/triggers/index.ts",
+      "import": "./src/triggers/index.ts"
+    },
+    "./cli": {
+      "types": "./src/cli.ts",
+      "import": "./src/cli.ts"
+    }
+  },
+  "bin": {
+    "pathfinder": "./src/cli.ts"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:ci": "vitest run --reporter=junit --outputFile.junit=./junit.xml",
+    "typecheck": "tsc --noEmit",
+    "pathfinder": "npx tsx src/cli.ts",
     "validate": "npx tsx src/cli.ts"
   },
   "devDependencies": {

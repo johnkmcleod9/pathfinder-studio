@@ -1,3 +1,4 @@
+#!/usr/bin/env tsx
 /**
  * Pathfinder Studio CLI
  *
