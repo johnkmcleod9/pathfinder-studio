@@ -66,6 +66,12 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
     // to their declared initial visibility.
     this.layerVisibility = {};
 
+    // Session-time tracking — start the clock the moment the runtime
+    // is constructed (not at start()) so a learner who downloads the
+    // package and watches it slow-load still gets credit for the wait.
+    this.sessionStartTime = Date.now();
+    this.terminated = false;
+
     // Build a question lookup so quiz objects can resolve their question by id.
     this.questionsById = {};
     var quiz = this.course.quiz;
@@ -170,6 +176,45 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
       this._persistLocation();
       this._emit('slidechange', this.getCurrentSlideId(), this.currentIndex, this.slideIds.length);
     }
+  };
+
+  // ---- Session time / termination ----
+
+  PathfinderRuntime.prototype.getSessionTime = function() {
+    return Date.now() - this.sessionStartTime;
+  };
+
+  // Push final state to the LMS and end the session. Idempotent —
+  // a second call is a no-op so accidental double-bind on browser
+  // unload doesn't double-write.
+  PathfinderRuntime.prototype.terminate = function() {
+    if (this.terminated) return;
+    this.terminated = true;
+
+    var elapsedMs = this.getSessionTime();
+
+    // Flush latest state first so the suspend payload reflects the
+    // exact moment of exit.
+    this.saveProgress();
+
+    if (this.lmsAdapter) {
+      if (typeof this.lmsAdapter.SaveSessionTime === 'function') {
+        try { this.lmsAdapter.SaveSessionTime(elapsedMs); } catch (e) {
+          if (typeof console !== 'undefined' && console.warn) {
+            console.warn('[PathfinderRuntime] SaveSessionTime threw:', e);
+          }
+        }
+      }
+      if (typeof this.lmsAdapter.Terminate === 'function') {
+        try { this.lmsAdapter.Terminate(''); } catch (e) {
+          if (typeof console !== 'undefined' && console.warn) {
+            console.warn('[PathfinderRuntime] Terminate threw:', e);
+          }
+        }
+      }
+    }
+
+    this._emit('sessionend', { durationMs: elapsedMs });
   };
 
   PathfinderRuntime.prototype.getCurrentSlideId = function() {
