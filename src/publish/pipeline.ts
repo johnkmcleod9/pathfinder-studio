@@ -118,9 +118,6 @@ export class PublishPipeline {
     this.report.warnings.push({ code, message });
   }
 
-  private stageDuration(stage: StageId): number {
-    return this.report.stageDurations[stage] ?? 0;
-  }
 
   // ---- Stage 0: Unpack ----
 

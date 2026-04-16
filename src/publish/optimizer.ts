@@ -171,7 +171,6 @@ async function optimizeImage(
   mime: string,
   settings: MediaQualitySettings
 ): Promise<OptimizeResult> {
-  const ext = path.extname(filePath).toLowerCase();
   const tmpPath = filePath + '.opt.tmp';
 
   try {
@@ -250,8 +249,6 @@ async function optimizeAudio(
 ): Promise<OptimizeResult> {
   // Try FFmpeg for audio transcoding
   const tmpPath = filePath + '.opt.tmp';
-  const ext = path.extname(filePath).toLowerCase();
-  const targetExt = ext === '.mp3' ? '.mp3' : '.mp3';
 
   try {
     await execAsync(
@@ -287,7 +284,6 @@ async function optimizeVideo(
 ): Promise<OptimizeResult> {
   // FFmpeg H.264 transcoding with quality preset
   const tmpPath = filePath + '.opt.tmp';
-  const ext = path.extname(filePath).toLowerCase();
 
   try {
     await execAsync(

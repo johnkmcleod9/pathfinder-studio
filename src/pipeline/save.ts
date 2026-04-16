@@ -18,8 +18,8 @@
 
 import JSZip from 'jszip';
 import { readFile } from 'fs/promises';
-import type { Manifest, ManifestOptions } from './manifest.js';
-import { createManifest, addAsset, type AssetEntry } from './manifest.js';
+import type { Manifest } from './manifest.js';
+import { createManifest, addAsset } from './manifest.js';
 
 export interface SaveOptions {
   /** Path to a directory of media files to include */
@@ -89,7 +89,7 @@ export async function saveProject(
 
     // Add from media directory
     if (options.mediaDir) {
-      const { readdir, stat } = await import('fs/promises');
+      const { readdir } = await import('fs/promises');
       try {
         const entries = await readdir(options.mediaDir, { withFileTypes: true });
         for (const entry of entries) {

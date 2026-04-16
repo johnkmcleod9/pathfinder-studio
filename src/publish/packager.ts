@@ -6,6 +6,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as crypto from 'node:crypto';
+// @ts-ignore — adm-zip has no types published
 import AdmZip from 'adm-zip';
 import {
   OutputStandard,
@@ -13,16 +14,6 @@ import {
   RuntimeCourse,
   RuntimeSlide,
   RuntimeObject,
-  RuntimeLayer,
-  RuntimeTrigger,
-  RuntimeQuestion,
-  RuntimeVariable,
-  RuntimeMediaManifest,
-  RuntimeLMSConfig,
-  RuntimeBackground,
-  RuntimeNavigation,
-  RuntimeQuiz,
-  RuntimeInteraction,
 } from './types.js';
 import {
   buildScormManifest,
@@ -112,7 +103,10 @@ export async function assemblePackage(
   );
   zip.addFile(
     'player/player-i18n.json',
-    Buffer.from(JSON.stringify(buildI18n(), 'utf-8'), 'utf-8')
+    // JSON.stringify's 2nd arg is a replacer function/array, not an
+    // encoding — passing 'utf-8' here used to be silently ignored
+    // (TS now flags it). We don't need a replacer; pass null.
+    Buffer.from(JSON.stringify(buildI18n(), null, 2), 'utf-8')
   );
 
   // --- SCORM manifest ---
@@ -508,7 +502,7 @@ function buildXapiIndex(): string {
 </html>`;
 }
 
-function buildSlideHtml(slide: RuntimeSlide, course: RuntimeCourse, standard: OutputStandard): string {
+function buildSlideHtml(slide: RuntimeSlide, course: RuntimeCourse, _standard: OutputStandard): string {
   const bg = slide.background ?? { type: 'solid', color: '#FFFFFF' };
   const bgStyle = bg.type === 'solid'
     ? `background-color: ${bg.color ?? '#FFFFFF'}`

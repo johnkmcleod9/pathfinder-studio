@@ -107,7 +107,12 @@ export function compareVersions(a: string, b: string): number {
 /**
  * Rename a field in the project (supports nested paths like "metadata.title").
  */
-function renameField(
+/**
+ * Rename a field within `obj` using a dot-separated `from` path.
+ * Exposed so registered migrations can use it without re-implementing
+ * dotted-path traversal each time.
+ */
+export function renameField(
   obj: Record<string, unknown>,
   from: string,
   to: string

@@ -213,7 +213,7 @@ export class PathfinderRuntime {
     return el;
   }
 
-  private attachObjectListeners(wrapper: HTMLElement, slide: RuntimeSlide): void {
+  private attachObjectListeners(wrapper: HTMLElement, _slide: RuntimeSlide): void {
     wrapper.addEventListener('click', async (e) => {
       const target = e.target as HTMLElement;
       const objectEl = target.closest('[data-object-id]') as HTMLElement | null;

@@ -7,7 +7,7 @@
  * 3. Returns { correct, pointsAwarded, feedback }
  */
 
-import type { Question, QuestionResult, AnswerOption } from './types.js';
+import type { Question, QuestionResult } from './types.js';
 
 // ─── Scoring helpers ─────────────────────────────────────────────────────────
 

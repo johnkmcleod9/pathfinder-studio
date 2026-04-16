@@ -16,7 +16,6 @@ import type {
   QuizAttempt,
   QuizSuspendData,
   QuestionResult,
-  Question,
 } from './types.js';
 import { evaluateQuestion } from './questions.js';
 

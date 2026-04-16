@@ -5,7 +5,6 @@ import { MediaController } from './media-controller.js';
 
 // ---- TriggerExecutor ----
 
-type LMSStatementSender = LMSAdapter extends { sendStatement: infer S } ? S : never;
 
 /**
  * Registers event listeners and executes trigger action graphs.

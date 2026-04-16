@@ -3,7 +3,7 @@
  * Also produces the SCORM adapter JS files that go into the output package.
  */
 
-import { OutputStandard, ImsManifest, ImsOrganization, ImsItem, ImsResource, ImsMetadata } from './types.js';
+import { OutputStandard, ImsManifest, ImsOrganization, ImsItem, ImsResource } from './types.js';
 
 // SCORM 2004 4th Edition CAM namespaces. Every prefix used in the
 // rendered manifest must be declared in the root <manifest> element.
@@ -30,7 +30,7 @@ export function buildScormManifest(
   title: string,
   standard: OutputStandard,
   slides: string[],
-  files: string[],
+  _files: string[],
   masteryScore?: number
 ): ImsManifest {
   const sanitizeId = (s: string) => s.replace(/[^a-zA-Z0-9_-]/g, '_');

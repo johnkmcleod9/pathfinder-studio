@@ -154,7 +154,7 @@ export class TriggerEngine {
 
   #register(trigger: Trigger, slideId: string, objectId?: string): void {
     const { event } = trigger;
-    const handler = async (evt: TriggerEvent, ctx: ExecutionContext) => {
+    const handler = async (_evt: TriggerEvent, ctx: ExecutionContext) => {
       if (this.#conditionsPass(trigger, ctx)) {
         const result = await this.#executeTrigger(trigger, { ...ctx, currentSlide: slideId, currentObject: objectId ?? event.source });
         if (result?.kind === 'navigate') this.options.onNavigate?.(result.targetSlideId);
@@ -194,7 +194,7 @@ export class TriggerEngine {
     const syncHandlers: Array<() => void> = [];
     const asyncHandlers: Array<() => Promise<void>> = [];
 
-    const dispatch = (map: Map<string, Set<(event: TriggerEvent, ctx: ExecutionContext) => void>>, key: string) => {
+    const dispatch = (map: Map<string, Set<(event: TriggerEvent, ctx: ExecutionContext) => void | Promise<void>>>, key: string) => {
       for (const handler of map.get(key) ?? []) {
         const result = handler(event, context);
         if (result instanceof Promise) {
@@ -224,7 +224,7 @@ export class TriggerEngine {
 
   // ─── Condition Evaluation ──────────────────────────────────────────────────
 
-  #conditionsPass(trigger: Trigger, ctx: ExecutionContext): boolean {
+  #conditionsPass(trigger: Trigger, _ctx: ExecutionContext): boolean {
     const conditions = trigger.conditions ?? [];
     if (conditions.length === 0) return true;
     return conditions.every(c => evaluateCondition(c, this.vars));

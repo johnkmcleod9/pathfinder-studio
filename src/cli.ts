@@ -506,10 +506,12 @@ async function handleInspect(argv: string[], io: CliIO): Promise<number> {
   let manifest: Record<string, unknown> = { version: '1.0', assets: {} };
   try {
     const parsedZip = await parseProjectFile(args.input);
-    project = parsedZip.project as Record<string, unknown>;
-    manifest = parsedZip.manifest as Record<string, unknown>;
+    project = parsedZip.project as unknown as Record<string, unknown>;
+    manifest = parsedZip.manifest as unknown as Record<string, unknown>;
     for (const w of parsedZip.warnings ?? []) {
-      issues.push({ stage: 'parse', code: w.code, message: w.message });
+      // ParsedProject.warnings is string[] — bucket each line as
+      // a generic PARSE_WARNING so the issues array is uniform.
+      issues.push({ stage: 'parse', code: 'PARSE_WARNING', message: String(w) });
     }
   } catch (err: unknown) {
     const e = err as { code?: string; message: string };
