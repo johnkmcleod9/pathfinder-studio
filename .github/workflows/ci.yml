@@ -33,6 +33,9 @@ jobs:
       - name: Type check
         run: npx tsc --noEmit
 
+      - name: Build dist/
+        run: npm run build
+
       - name: Run tests
         run: npm run test:ci
         env:
@@ -132,13 +135,13 @@ jobs:
 
       - name: Validate all schemas
         run: |
-          node --loader tsx src/cli.ts validate --check-schemas
+          npx tsx src/cli.ts validate --check-schemas
         env:
           CI: true
 
       - name: Run ajv-draft-07 schema validation
         run: |
-          node --loader tsx src/cli.ts validate --strict
+          npx tsx src/cli.ts validate --strict
 
   lint:
     name: Lint
