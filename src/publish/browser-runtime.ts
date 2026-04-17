@@ -705,9 +705,12 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
     for (var i = 0; i < triggers.length; i++) {
       var t = triggers[i];
       if (!t || !t.event) continue;
-      if (t.event.type === 'userClick' && t.source) {
-        if (!clickTriggers[t.source]) clickTriggers[t.source] = [];
-        clickTriggers[t.source].push(t);
+      // Source is emitted under event by the compiler (see toRuntimeTrigger).
+      // Tolerate a top-level t.source for hand-authored test fixtures.
+      var src = (t.event && t.event.source) || t.source;
+      if (t.event.type === 'userClick' && src) {
+        if (!clickTriggers[src]) clickTriggers[src] = [];
+        clickTriggers[src].push(t);
       }
     }
     if (Object.keys(clickTriggers).length === 0) return;
@@ -818,7 +821,10 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
         this.hideLayer(action.target);
         return;
       case 'setVariable':
-        this.setVariable(action.target, action.value);
+        // Compiler emits action.variable per ActionNodeIR. Tolerate
+        // action.target as a legacy alias so hand-authored courses
+        // written before the shape was codified still drive the runtime.
+        this.setVariable(action.variable || action.target, action.value);
         return;
       case 'navigateNext':
         this.navigateNext();
