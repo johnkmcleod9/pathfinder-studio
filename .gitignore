@@ -19,3 +19,10 @@ junit.xml
 
 # Local preview artifacts
 course-preview/
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+tests/e2e/.tmp/
+e2e-junit.xml
