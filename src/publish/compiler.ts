@@ -186,6 +186,7 @@ function compileObject(
     visibility: compileVisibility(raw),
     states: (raw['states'] as Record<string, Record<string, unknown>> | undefined) ?? undefined,
     interactions: undefined,
+    questionId: typeof raw['questionId'] === 'string' ? (raw['questionId'] as string) : undefined,
   };
 
   const rawTriggers = (raw['triggers'] ?? []) as JsonRecord[];
@@ -550,6 +551,7 @@ function toRuntimeObject(obj: ObjectIR): RuntimeObject {
       type: i.type,
       correctResponse: i.correctResponse,
     })),
+    questionId: obj.questionId,
   };
   // Only emit visibility when it actually constrains rendering — i.e.
   // initial is hidden, or there's at least one conditional rule. The

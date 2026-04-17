@@ -107,7 +107,7 @@ export interface SlideIR {
 
 export interface ObjectIR {
   id: string;
-  type: string;                // 'text' | 'image' | 'shape' | 'button' | 'hotspot' | 'drag-drop' | 'video' | 'audio'
+  type: string;                // 'text' | 'image' | 'shape' | 'button' | 'hotspot' | 'drag-drop' | 'video' | 'audio' | 'quiz'
   rect: RectIR;
   content?: string;            // text/html content
   style?: Record<string, unknown>;
@@ -116,6 +116,7 @@ export interface ObjectIR {
   visibility: VisibilityIR;
   states?: Record<string, Record<string, unknown>>;
   interactions?: InteractionIR[];
+  questionId?: string;         // for type === 'quiz', references a quiz question by id
 }
 
 export interface RectIR {
@@ -383,6 +384,7 @@ export interface RuntimeObject {
   states?: Record<string, Record<string, unknown>>;
   interactions?: RuntimeInteraction[];
   visibility?: RuntimeVisibility;
+  questionId?: string;         // for type === 'quiz', references a quiz question by id
 }
 
 export interface RuntimeVisibility {
