@@ -200,7 +200,6 @@ describe('XAPIAdapter', () => {
       auth: 'Bearer test',
       activityId: 'https://example.com/course/test',
       agent: { mbox: 'mailto:test@example.com', name: 'Test User' },
-      // @ts-expect-error – test batcher
       batcher: { enqueue, flush },
     });
 
@@ -226,7 +225,6 @@ describe('XAPIAdapter', () => {
       auth: 'Bearer test',
       activityId: 'https://example.com/course/test',
       agent: { mbox: 'mailto:test@example.com', name: 'Test User' },
-      // @ts-expect-error – test batcher
       batcher: { enqueue, flush },
     });
 

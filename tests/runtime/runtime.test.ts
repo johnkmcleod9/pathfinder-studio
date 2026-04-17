@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   VariableStore,
   StandaloneAdapter,
@@ -8,7 +8,7 @@ import {
   MediaController,
   PathfinderRuntime,
 } from '../../src/runtime/index.js';
-import type { RuntimeCourse, RuntimeSlide, RuntimeTrigger } from '../../src/runtime/types.js';
+import type { RuntimeCourse, RuntimeTrigger } from '../../src/runtime/types.js';
 
 // ---- Fixtures ----
 
@@ -131,16 +131,12 @@ describe('VariableStore', () => {
 describe('NavigationEngine', () => {
   let course: RuntimeCourse;
   let nav: NavigationEngine;
-  let currentSlide: string | null = null;
-  let history: string[] = [];
   let onSlideChange: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     course = makeCourse();
     onSlideChange = vi.fn();
     nav = new NavigationEngine(course, onSlideChange);
-    currentSlide = course.navigation.entry;
-    history = [currentSlide!];
   });
 
   it('starts at entry slide', () => {
@@ -214,7 +210,6 @@ describe('NavigationEngine', () => {
 describe('TriggerExecutor', () => {
   let store: VariableStore;
   let nav: NavigationEngine;
-  let quiz: QuizController | null;
   let media: MediaController;
   let lms: { sendStatement: ReturnType<typeof vi.fn>; saveLocation: ReturnType<typeof vi.fn> };
   let executor: TriggerExecutor;
@@ -224,7 +219,6 @@ describe('TriggerExecutor', () => {
     course = makeCourse();
     store = new VariableStore(course.variables);
     nav = new NavigationEngine(course, vi.fn());
-    quiz = null;
     media = new MediaController({} as unknown as HTMLElement);
     lms = { sendStatement: vi.fn(), saveLocation: vi.fn() };
     executor = new TriggerExecutor(store, nav, media, lms as unknown as ReturnType<typeof lms.sendStatement> extends (...args: infer A) => infer R ? (...args: A) => R : never);
@@ -424,57 +418,57 @@ describe('QuizController', () => {
   });
 
   it('starts attempt', () => {
-    const attempt = quiz.startAttempt();
+    const attempt = quiz!.startAttempt()!;
     expect(attempt.id).toBeTruthy();
     expect(attempt.state).toBe('in_progress');
   });
 
   it('records answer', () => {
-    const attempt = quiz.startAttempt();
-    quiz.recordAnswer(attempt.id, 'q1', 'b');
-    const results = quiz.getAttemptResults(attempt.id);
+    const attempt = quiz!.startAttempt()!;
+    quiz!.recordAnswer(attempt.id, 'q1', 'b');
+    const results = quiz!.getAttemptResults(attempt.id)!;
     expect(results.answers['q1']).toBe('b');
   });
 
   it('submits attempt and computes score', () => {
-    const attempt = quiz.startAttempt();
-    quiz.recordAnswer(attempt.id, 'q1', 'b');
-    quiz.recordAnswer(attempt.id, 'q2', 'true');
-    const score = quiz.submitAttempt(attempt.id);
+    const attempt = quiz!.startAttempt()!;
+    quiz!.recordAnswer(attempt.id, 'q1', 'b');
+    quiz!.recordAnswer(attempt.id, 'q2', 'true');
+    const score = quiz!.submitAttempt(attempt.id);
     expect(score).not.toBeNull();
     expect(score!.percent).toBe(100); // Both correct
     expect(score!.status).toBe('passed');
   });
 
   it('scores 0% when all wrong', () => {
-    const attempt = quiz.startAttempt();
-    quiz.recordAnswer(attempt.id, 'q1', 'a');
-    quiz.recordAnswer(attempt.id, 'q2', 'false');
-    const score = quiz.submitAttempt(attempt.id);
+    const attempt = quiz!.startAttempt()!;
+    quiz!.recordAnswer(attempt.id, 'q1', 'a');
+    quiz!.recordAnswer(attempt.id, 'q2', 'false');
+    const score = quiz!.submitAttempt(attempt.id);
     expect(score!.percent).toBe(0);
     expect(score!.status).toBe('failed');
   });
 
   it('enforces attempt limit', () => {
-    const a1 = quiz.startAttempt();
-    quiz.submitAttempt(a1.id);
-    const a2 = quiz.startAttempt();
-    quiz.submitAttempt(a2.id);
-    const a3 = quiz.startAttempt();
-    expect(a3).toBeNull(); // No more attempts
+    const a1 = quiz!.startAttempt()!;
+    quiz!.submitAttempt(a1.id);
+    const a2 = quiz!.startAttempt()!;
+    quiz!.submitAttempt(a2.id);
+    const a3 = quiz!.startAttempt();
+    expect(a3).toBeNull();
   });
 
   it('serializes state for suspend_data', () => {
-    const attempt = quiz.startAttempt();
-    quiz.recordAnswer(attempt.id, 'q1', 'b');
-    const state = quiz.serializeState();
+    const attempt = quiz!.startAttempt()!;
+    quiz!.recordAnswer(attempt.id, 'q1', 'b');
+    const state = quiz!.serializeState();
     expect(state.attempts[attempt.id]).toBeTruthy();
   });
 
   it('restores state from suspend_data', () => {
-    const attempt = quiz.startAttempt();
-    quiz.recordAnswer(attempt.id, 'q1', 'b');
-    const state = quiz.serializeState();
+    const attempt = quiz!.startAttempt()!;
+    quiz!.recordAnswer(attempt.id, 'q1', 'b');
+    const state = quiz!.serializeState();
     const newQuiz = new QuizController(quizCourse.quiz!, store);
     newQuiz.restoreState(state);
     expect(newQuiz.getAttemptResults(attempt.id)?.answers['q1']).toBe('b');
@@ -504,7 +498,7 @@ describe('MediaController', () => {
   it('plays media with correct src and volume', async () => {
     const container = { appendChild: vi.fn() } as unknown as HTMLElement;
     const media = new MediaController(container);
-    const mockEl = (document.createElement as ReturnType<typeof vi.fn>)();
+    const mockEl = (document.createElement as ReturnType<typeof vi.fn>)() as Record<string, unknown>;
     await media.play({ id: 'audio-1', type: 'audio', src: 'data:audio/mp3;base64,', volume: 0.5, loop: false });
     expect(mockEl.src).toBe('data:audio/mp3;base64,');
     expect(mockEl.volume).toBe(0.5);
@@ -515,7 +509,7 @@ describe('MediaController', () => {
   it('pauses media by id', async () => {
     const container = { appendChild: vi.fn() } as unknown as HTMLElement;
     const media = new MediaController(container);
-    const mockEl = (document.createElement as ReturnType<typeof vi.fn>)();
+    const mockEl = (document.createElement as ReturnType<typeof vi.fn>)() as Record<string, unknown>;
     await media.play({ id: 'audio-1', type: 'audio', src: 'data:audio/mp3;base64,', volume: 1, loop: false });
     media.pause('audio-1');
     expect(mockEl.pause).toHaveBeenCalled();
@@ -524,7 +518,7 @@ describe('MediaController', () => {
   it('stops media by id', async () => {
     const container = { appendChild: vi.fn() } as unknown as HTMLElement;
     const media = new MediaController(container);
-    const mockEl = (document.createElement as ReturnType<typeof vi.fn>)();
+    const mockEl = (document.createElement as ReturnType<typeof vi.fn>)() as Record<string, unknown>;
     await media.play({ id: 'audio-1', type: 'audio', src: 'data:audio/mp3;base64,', volume: 1, loop: false });
     media.stop('audio-1');
     expect(mockEl.pause).toHaveBeenCalled();
@@ -534,7 +528,7 @@ describe('MediaController', () => {
   it('destroy cleans up all elements', async () => {
     const container = { appendChild: vi.fn() } as unknown as HTMLElement;
     const media = new MediaController(container);
-    const mockEl = (document.createElement as ReturnType<typeof vi.fn>)();
+    const mockEl = (document.createElement as ReturnType<typeof vi.fn>)() as Record<string, unknown>;
     await media.play({ id: 'audio-1', type: 'audio', src: 'data:audio/mp3;base64,', volume: 1, loop: false });
     media.destroy();
     expect(mockEl.remove).toHaveBeenCalled();
@@ -606,7 +600,7 @@ describe('PathfinderRuntime', () => {
   it('serializeState includes variables', async () => {
     const { runtime } = makeRuntime();
     await runtime.start();
-    const state = runtime.serializeState();
+    const state = runtime.serializeState() as Record<string, unknown>;
     expect(state.variables).toBeDefined();
     expect((state.variables as Record<string, unknown>).CourseStarted).toBe(false);
   });

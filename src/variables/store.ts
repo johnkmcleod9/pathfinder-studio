@@ -19,7 +19,7 @@
 
 import type { VariableType } from './types.js';
 import { coerceToType, validateValue, getTypeDefinition } from './types.js';
-import { getSystemVariable, isSystemVariable } from './system-variables.js';
+import { getSystemVariable } from './system-variables.js';
 
 export type Scope = 'project' | 'scene' | 'slide' | 'local';
 
@@ -43,14 +43,6 @@ export interface VariableOptions {
 }
 
 export type VariableChangeListener = (name: string, oldValue: unknown, newValue: unknown, scope: Scope) => void;
-
-interface ScopedStore {
-  get(name: string): unknown;
-  set(name: string, value: unknown): void;
-  has(name: string): boolean;
-  delete(name: string): void;
-  keys(): string[];
-}
 
 export class VariableStore {
   private project = new Map<string, unknown>();

@@ -1,0 +1,627 @@
+{
+  "schemaVersion": "1.0.0",
+  "formatVersion": "1.0.0",
+  "metadata": {
+    "id": "demo-e2e-course",
+    "title": "Pathfinder Studio — Interactive Tour",
+    "author": "Pathfinder Studio",
+    "language": "en"
+  },
+  "variables": {
+    "LearnerName": {
+      "type": "text",
+      "defaultValue": "friend",
+      "scope": "course"
+    },
+    "NameConfirmed": {
+      "type": "boolean",
+      "defaultValue": false,
+      "scope": "course"
+    }
+  },
+  "navigation": {
+    "entrySlide": "welcome",
+    "slides": [
+      "welcome",
+      "greeting",
+      "showcase",
+      "q1-mc",
+      "q2-tf-fill",
+      "q3-mr-num",
+      "q4-match-seq",
+      "results"
+    ],
+    "showNavigationArrows": true,
+    "showProgressBar": true,
+    "showSlideNumber": true
+  },
+  "quiz": {
+    "id": "demo-quiz",
+    "passingScore": 60,
+    "attemptsAllowed": 0,
+    "allowReview": true,
+    "randomizeQuestions": false,
+    "randomizeOptions": false,
+    "questions": [
+      {
+        "id": "q-mc",
+        "type": "multiple_choice",
+        "text": "What format does Pathfinder Studio compile for LMS delivery?",
+        "points": 10,
+        "options": [
+          { "id": "mc-a", "text": "A plain HTML page with no metadata", "isCorrect": false },
+          { "id": "mc-b", "text": "SCORM, xAPI, or standalone HTML5", "isCorrect": true },
+          { "id": "mc-c", "text": "Native iOS and Android apps", "isCorrect": false }
+        ]
+      },
+      {
+        "id": "q-tf",
+        "type": "true_false",
+        "text": "A .pathfinder file is a ZIP containing project.json, manifest.json, and media.",
+        "points": 10,
+        "options": [
+          { "id": "tf-t", "text": "True", "isCorrect": true },
+          { "id": "tf-f", "text": "False", "isCorrect": false }
+        ]
+      },
+      {
+        "id": "q-fill",
+        "type": "fill_blank",
+        "text": "Complete: Pathfinder compiles to SCORM 1.2, SCORM 2004, xAPI, and ______.",
+        "points": 10,
+        "correctAnswer": "HTML5",
+        "caseSensitive": false
+      },
+      {
+        "id": "q-mr",
+        "type": "multiple_response",
+        "text": "Which interaction types ship in the runtime? (select all that apply)",
+        "points": 10,
+        "options": [
+          { "id": "mr-a", "text": "Multiple choice", "isCorrect": true },
+          { "id": "mr-b", "text": "Drag and drop", "isCorrect": false },
+          { "id": "mr-c", "text": "Matching", "isCorrect": true },
+          { "id": "mr-d", "text": "Sequencing", "isCorrect": true }
+        ]
+      },
+      {
+        "id": "q-num",
+        "type": "numeric",
+        "text": "How many pipeline stages does the compiler run?",
+        "points": 10,
+        "correctAnswer": "8",
+        "tolerance": 0
+      },
+      {
+        "id": "q-match",
+        "type": "matching",
+        "text": "Match each runtime feature to its purpose.",
+        "points": 10,
+        "options": [
+          { "id": "mt-a", "text": "Layers", "matchTarget": "tgt-overlay" },
+          { "id": "mt-b", "text": "Variables", "matchTarget": "tgt-state" },
+          { "id": "mt-c", "text": "Triggers", "matchTarget": "tgt-actions" }
+        ],
+        "matchTargets": [
+          { "id": "tgt-overlay", "text": "Optional overlays on a slide" },
+          { "id": "tgt-state", "text": "Per-learner state carried across slides" },
+          { "id": "tgt-actions", "text": "Actions fired by events" }
+        ]
+      },
+      {
+        "id": "q-seq",
+        "type": "sequencing",
+        "text": "Put the publish stages in order.",
+        "points": 10,
+        "options": [
+          { "id": "sq-a", "text": "Validate" },
+          { "id": "sq-b", "text": "Compile IR" },
+          { "id": "sq-c", "text": "Optimize" },
+          { "id": "sq-d", "text": "Package" }
+        ],
+        "correctSequence": ["sq-a", "sq-b", "sq-c", "sq-d"]
+      }
+    ]
+  },
+  "slides": [
+    {
+      "id": "welcome",
+      "title": "Welcome",
+      "background": {
+        "type": "gradient",
+        "gradient": {
+          "angle": 160,
+          "stops": [
+            { "offset": 0, "color": "#0E1726" },
+            { "offset": 1, "color": "#1E3A8A" }
+          ]
+        }
+      },
+      "zOrder": ["welcome-title", "welcome-sub", "welcome-cta"],
+      "objects": {
+        "welcome-title": {
+          "type": "text",
+          "rect": { "x": 140, "y": 200, "w": 1000, "h": 90 },
+          "content": "Pathfinder Studio",
+          "style": {
+            "fontSize": 64,
+            "fontWeight": "700",
+            "color": "#F5F7FA",
+            "fontFamily": "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+          }
+        },
+        "welcome-sub": {
+          "type": "text",
+          "rect": { "x": 140, "y": 300, "w": 1000, "h": 60 },
+          "content": "A tour of every interaction the runtime supports.",
+          "style": { "fontSize": 24, "color": "#CBD5F5" }
+        },
+        "welcome-cta": {
+          "type": "button",
+          "rect": { "x": 140, "y": 430, "w": 220, "h": 56 },
+          "content": "Start the tour",
+          "style": {
+            "backgroundColor": "#F5B041",
+            "color": "#0E1726",
+            "fontWeight": "700",
+            "fontSize": 18
+          }
+        }
+      },
+      "layers": [],
+      "triggers": [
+        {
+          "id": "t-welcome-start",
+          "event": { "type": "userClick", "source": "welcome-cta" },
+          "action": { "type": "jumpToSlide", "target": "greeting" },
+          "priority": 0
+        }
+      ]
+    },
+    {
+      "id": "greeting",
+      "title": "Say hello",
+      "background": { "type": "solid", "color": "#F5F7FA" },
+      "zOrder": ["greeting-h", "greeting-p", "greeting-setname", "greeting-reveal", "greeting-next"],
+      "objects": {
+        "greeting-h": {
+          "type": "text",
+          "rect": { "x": 100, "y": 100, "w": 1080, "h": 70 },
+          "content": "Hello, %LearnerName%.",
+          "style": { "fontSize": 48, "fontWeight": "700", "color": "#111827" }
+        },
+        "greeting-p": {
+          "type": "text",
+          "rect": { "x": 100, "y": 200, "w": 1000, "h": 80 },
+          "content": "Variables substitute into text like mail-merge. Click the button and watch the greeting update.",
+          "style": { "fontSize": 20, "color": "#374151" }
+        },
+        "greeting-setname": {
+          "type": "button",
+          "rect": { "x": 100, "y": 320, "w": 240, "h": 52 },
+          "content": "Call me Daisy",
+          "style": {
+            "backgroundColor": "#14B8A6",
+            "color": "#FFFFFF",
+            "fontWeight": "700",
+            "fontSize": 16
+          }
+        },
+        "greeting-reveal": {
+          "type": "text",
+          "rect": { "x": 100, "y": 410, "w": 900, "h": 50 },
+          "content": "Nice to meet you, Daisy. Let's keep going.",
+          "style": { "fontSize": 20, "color": "#10B981", "fontWeight": "600" },
+          "visibility": {
+            "initial": "hidden",
+            "conditional": [
+              {
+                "conditions": [
+                  { "type": "variableEquals", "variable": "NameConfirmed", "value": true }
+                ],
+                "then": "visible"
+              }
+            ]
+          }
+        },
+        "greeting-next": {
+          "type": "button",
+          "rect": { "x": 100, "y": 540, "w": 200, "h": 48 },
+          "content": "Next →",
+          "style": { "backgroundColor": "#1F2937", "color": "#FFFFFF", "fontSize": 16 }
+        }
+      },
+      "triggers": [
+        {
+          "id": "t-greeting-setname",
+          "event": { "type": "userClick", "source": "greeting-setname" },
+          "action": { "type": "setVariable", "variable": "LearnerName", "value": "Daisy" },
+          "priority": 0
+        },
+        {
+          "id": "t-greeting-confirmed",
+          "event": { "type": "userClick", "source": "greeting-setname" },
+          "action": { "type": "setVariable", "variable": "NameConfirmed", "value": true },
+          "priority": 1
+        },
+        {
+          "id": "t-greeting-next",
+          "event": { "type": "userClick", "source": "greeting-next" },
+          "action": { "type": "jumpToSlide", "target": "showcase" },
+          "priority": 0
+        }
+      ]
+    },
+    {
+      "id": "showcase",
+      "title": "Showcase",
+      "background": { "type": "solid", "color": "#FFFFFF" },
+      "zOrder": [
+        "showcase-h",
+        "showcase-hero",
+        "showcase-shape",
+        "showcase-shape-text",
+        "showcase-bullet1",
+        "showcase-bullet2",
+        "showcase-bullet3",
+        "showcase-tip-btn",
+        "showcase-next"
+      ],
+      "objects": {
+        "showcase-h": {
+          "type": "text",
+          "rect": { "x": 80, "y": 60, "w": 1120, "h": 60 },
+          "content": "Image, shape, and layer overlays",
+          "style": { "fontSize": 36, "fontWeight": "700", "color": "#0E1726" }
+        },
+        "showcase-hero": {
+          "type": "image",
+          "rect": { "x": 80, "y": 150, "w": 480, "h": 270 },
+          "src": "media/hero.png",
+          "altText": "Navy-to-teal gradient with scattered gold stars"
+        },
+        "showcase-shape": {
+          "type": "shape",
+          "rect": { "x": 600, "y": 150, "w": 560, "h": 60 },
+          "style": { "backgroundColor": "#F5B041" }
+        },
+        "showcase-shape-text": {
+          "type": "text",
+          "rect": { "x": 620, "y": 165, "w": 520, "h": 30 },
+          "content": "Shapes are decorative by default (aria-hidden).",
+          "style": { "fontSize": 18, "fontWeight": "600", "color": "#0E1726" }
+        },
+        "showcase-bullet1": {
+          "type": "text",
+          "rect": { "x": 600, "y": 240, "w": 560, "h": 36 },
+          "content": "• Absolute-positioned slide canvas",
+          "style": { "fontSize": 18, "color": "#1F2937" }
+        },
+        "showcase-bullet2": {
+          "type": "text",
+          "rect": { "x": 600, "y": 280, "w": 560, "h": 36 },
+          "content": "• Layers stack on top and can be toggled",
+          "style": { "fontSize": 18, "color": "#1F2937" }
+        },
+        "showcase-bullet3": {
+          "type": "text",
+          "rect": { "x": 600, "y": 320, "w": 560, "h": 36 },
+          "content": "• Triggers wire clicks to actions",
+          "style": { "fontSize": 18, "color": "#1F2937" }
+        },
+        "showcase-tip-btn": {
+          "type": "button",
+          "rect": { "x": 600, "y": 380, "w": 200, "h": 44 },
+          "content": "Show tip",
+          "style": { "backgroundColor": "#14B8A6", "color": "#FFFFFF", "fontSize": 16 }
+        },
+        "showcase-next": {
+          "type": "button",
+          "rect": { "x": 80, "y": 540, "w": 240, "h": 48 },
+          "content": "Start the quiz →",
+          "style": {
+            "backgroundColor": "#0E1726",
+            "color": "#FFFFFF",
+            "fontSize": 16,
+            "fontWeight": "600"
+          }
+        }
+      },
+      "layers": [
+        {
+          "id": "tip-layer",
+          "name": "Tip overlay",
+          "visible": false,
+          "objects": {
+            "tip-backdrop": {
+              "type": "shape",
+              "rect": { "x": 0, "y": 0, "w": 1280, "h": 720 },
+              "style": { "backgroundColor": "#0E1726", "opacity": 0.6 }
+            },
+            "tip-bg": {
+              "type": "shape",
+              "rect": { "x": 240, "y": 180, "w": 800, "h": 280 },
+              "style": { "backgroundColor": "#1F2937" }
+            },
+            "tip-title": {
+              "type": "text",
+              "rect": { "x": 280, "y": 220, "w": 720, "h": 48 },
+              "content": "Tip",
+              "style": { "fontSize": 22, "fontWeight": "700", "color": "#F5B041" }
+            },
+            "tip-text": {
+              "type": "text",
+              "rect": { "x": 280, "y": 275, "w": 720, "h": 90 },
+              "content": "Layers live on top of the base slide. Dismiss this tip when you're ready.",
+              "style": { "fontSize": 18, "color": "#F5F7FA", "lineHeight": "1.5" }
+            },
+            "tip-hide": {
+              "type": "button",
+              "rect": { "x": 280, "y": 390, "w": 180, "h": 44 },
+              "content": "Got it",
+              "style": {
+                "backgroundColor": "#F5B041",
+                "color": "#0E1726",
+                "fontSize": 14,
+                "fontWeight": "700"
+              }
+            }
+          }
+        }
+      ],
+      "triggers": [
+        {
+          "id": "t-showcase-tip",
+          "event": { "type": "userClick", "source": "showcase-tip-btn" },
+          "action": { "type": "showLayer", "target": "tip-layer" },
+          "priority": 0
+        },
+        {
+          "id": "t-showcase-hide-tip",
+          "event": { "type": "userClick", "source": "tip-hide" },
+          "action": { "type": "hideLayer", "target": "tip-layer" },
+          "priority": 0
+        },
+        {
+          "id": "t-showcase-next",
+          "event": { "type": "userClick", "source": "showcase-next" },
+          "action": { "type": "jumpToSlide", "target": "q1-mc" },
+          "priority": 0
+        }
+      ]
+    },
+    {
+      "id": "q1-mc",
+      "title": "Quiz — multiple choice",
+      "background": { "type": "solid", "color": "#F5F7FA" },
+      "zOrder": ["q1-h", "q1-q", "q1-next"],
+      "objects": {
+        "q1-h": {
+          "type": "text",
+          "rect": { "x": 80, "y": 60, "w": 1120, "h": 50 },
+          "content": "Question 1 of 4 — Multiple choice",
+          "style": { "fontSize": 22, "fontWeight": "700", "color": "#0E1726" }
+        },
+        "q1-q": {
+          "type": "quiz",
+          "rect": { "x": 80, "y": 140, "w": 1120, "h": 380 },
+          "questionId": "q-mc",
+          "style": { "fontSize": 18, "color": "#111827" }
+        },
+        "q1-next": {
+          "type": "button",
+          "rect": { "x": 80, "y": 560, "w": 200, "h": 48 },
+          "content": "Next →",
+          "style": { "backgroundColor": "#0E1726", "color": "#FFFFFF", "fontSize": 16 }
+        }
+      },
+      "triggers": [
+        {
+          "id": "t-q1-next",
+          "event": { "type": "userClick", "source": "q1-next" },
+          "action": { "type": "jumpToSlide", "target": "q2-tf-fill" },
+          "priority": 0
+        }
+      ]
+    },
+    {
+      "id": "q2-tf-fill",
+      "title": "Quiz — true/false + fill",
+      "background": { "type": "solid", "color": "#F5F7FA" },
+      "zOrder": ["q2-h", "q2-tf", "q2-fill", "q2-next"],
+      "objects": {
+        "q2-h": {
+          "type": "text",
+          "rect": { "x": 80, "y": 60, "w": 1120, "h": 50 },
+          "content": "Question 2 of 4 — True/False and fill-in-the-blank",
+          "style": { "fontSize": 22, "fontWeight": "700", "color": "#0E1726" }
+        },
+        "q2-tf": {
+          "type": "quiz",
+          "rect": { "x": 80, "y": 140, "w": 540, "h": 340 },
+          "questionId": "q-tf"
+        },
+        "q2-fill": {
+          "type": "quiz",
+          "rect": { "x": 660, "y": 140, "w": 540, "h": 340 },
+          "questionId": "q-fill"
+        },
+        "q2-next": {
+          "type": "button",
+          "rect": { "x": 80, "y": 560, "w": 200, "h": 48 },
+          "content": "Next →",
+          "style": { "backgroundColor": "#0E1726", "color": "#FFFFFF", "fontSize": 16 }
+        }
+      },
+      "triggers": [
+        {
+          "id": "t-q2-next",
+          "event": { "type": "userClick", "source": "q2-next" },
+          "action": { "type": "jumpToSlide", "target": "q3-mr-num" },
+          "priority": 0
+        }
+      ]
+    },
+    {
+      "id": "q3-mr-num",
+      "title": "Quiz — multi-response + numeric",
+      "background": { "type": "solid", "color": "#F5F7FA" },
+      "zOrder": ["q3-h", "q3-mr", "q3-num", "q3-next"],
+      "objects": {
+        "q3-h": {
+          "type": "text",
+          "rect": { "x": 80, "y": 60, "w": 1120, "h": 50 },
+          "content": "Question 3 of 4 — Multi-response and numeric",
+          "style": { "fontSize": 22, "fontWeight": "700", "color": "#0E1726" }
+        },
+        "q3-mr": {
+          "type": "quiz",
+          "rect": { "x": 80, "y": 140, "w": 720, "h": 380 },
+          "questionId": "q-mr"
+        },
+        "q3-num": {
+          "type": "quiz",
+          "rect": { "x": 840, "y": 140, "w": 360, "h": 200 },
+          "questionId": "q-num"
+        },
+        "q3-next": {
+          "type": "button",
+          "rect": { "x": 80, "y": 560, "w": 200, "h": 48 },
+          "content": "Next →",
+          "style": { "backgroundColor": "#0E1726", "color": "#FFFFFF", "fontSize": 16 }
+        }
+      },
+      "triggers": [
+        {
+          "id": "t-q3-next",
+          "event": { "type": "userClick", "source": "q3-next" },
+          "action": { "type": "jumpToSlide", "target": "q4-match-seq" },
+          "priority": 0
+        }
+      ]
+    },
+    {
+      "id": "q4-match-seq",
+      "title": "Quiz — matching + sequencing",
+      "background": { "type": "solid", "color": "#F5F7FA" },
+      "zOrder": ["q4-h", "q4-match", "q4-seq", "q4-submit"],
+      "objects": {
+        "q4-h": {
+          "type": "text",
+          "rect": { "x": 80, "y": 40, "w": 1120, "h": 50 },
+          "content": "Question 4 of 4 — Matching and sequencing",
+          "style": { "fontSize": 22, "fontWeight": "700", "color": "#0E1726" }
+        },
+        "q4-match": {
+          "type": "quiz",
+          "rect": { "x": 80, "y": 120, "w": 560, "h": 360 },
+          "questionId": "q-match"
+        },
+        "q4-seq": {
+          "type": "quiz",
+          "rect": { "x": 680, "y": 120, "w": 520, "h": 360 },
+          "questionId": "q-seq"
+        },
+        "q4-submit": {
+          "type": "button",
+          "rect": { "x": 80, "y": 540, "w": 240, "h": 56 },
+          "content": "Submit quiz",
+          "style": {
+            "backgroundColor": "#F5B041",
+            "color": "#0E1726",
+            "fontSize": 18,
+            "fontWeight": "700"
+          }
+        }
+      },
+      "triggers": [
+        {
+          "id": "t-q4-submit",
+          "event": { "type": "userClick", "source": "q4-submit" },
+          "action": { "type": "submitQuiz", "target": "demo-quiz" },
+          "priority": 0
+        },
+        {
+          "id": "t-q4-results",
+          "event": { "type": "userClick", "source": "q4-submit" },
+          "action": { "type": "jumpToSlide", "target": "results" },
+          "priority": 1
+        }
+      ]
+    },
+    {
+      "id": "results",
+      "title": "Results",
+      "background": {
+        "type": "gradient",
+        "gradient": {
+          "angle": 180,
+          "stops": [
+            { "offset": 0, "color": "#0E1726" },
+            { "offset": 1, "color": "#1F2937" }
+          ]
+        }
+      },
+      "zOrder": ["results-badge", "results-pass", "results-fail", "results-sub"],
+      "objects": {
+        "results-badge": {
+          "type": "image",
+          "rect": { "x": 580, "y": 140, "w": 120, "h": 120 },
+          "src": "media/badge.png",
+          "altText": "Pathfinder completion badge"
+        },
+        "results-pass": {
+          "type": "text",
+          "rect": { "x": 140, "y": 300, "w": 1000, "h": 60 },
+          "content": "You passed, %LearnerName%.",
+          "style": {
+            "fontSize": 44,
+            "fontWeight": "700",
+            "color": "#F5B041",
+            "textAlign": "center"
+          },
+          "visibility": {
+            "initial": "hidden",
+            "conditional": [
+              {
+                "conditions": [
+                  { "type": "scoreGreaterThan", "scoreThreshold": 59 }
+                ],
+                "then": "visible"
+              }
+            ]
+          }
+        },
+        "results-fail": {
+          "type": "text",
+          "rect": { "x": 140, "y": 300, "w": 1000, "h": 60 },
+          "content": "Keep going, %LearnerName% — try again.",
+          "style": {
+            "fontSize": 44,
+            "fontWeight": "700",
+            "color": "#F87171",
+            "textAlign": "center"
+          },
+          "visibility": {
+            "initial": "hidden",
+            "conditional": [
+              {
+                "conditions": [
+                  { "type": "scoreLessThan", "scoreThreshold": 60 }
+                ],
+                "then": "visible"
+              }
+            ]
+          }
+        },
+        "results-sub": {
+          "type": "text",
+          "rect": { "x": 140, "y": 400, "w": 1000, "h": 50 },
+          "content": "That's every interaction the runtime supports, rolled into one short course.",
+          "style": { "fontSize": 20, "color": "#CBD5F5", "textAlign": "center" }
+        }
+      },
+      "triggers": []
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  VARIABLE_TYPES, VARIABLE_TYPE_NAMES, getTypeDefinition,
+  VARIABLE_TYPE_NAMES, getTypeDefinition,
   coerceToType, validateValue
 } from '../../src/variables/types.js';
 

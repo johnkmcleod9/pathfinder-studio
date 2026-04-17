@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { TriggerEngine, VariableStore, type Slide, type CourseProject } from '../../src/triggers/engine.js';
 
 function makeEngine(vars?: Record<string, unknown>, slides?: Slide[]) {
@@ -460,7 +460,7 @@ describe('TriggerEngine', () => {
       const { engine } = makeEngine();
       let called = false;
       const eng2 = new TriggerEngine(engine.vars, engine.project, {
-        onAction: (action) => {
+        onAction: (_action) => {
           called = true;
           return { kind: 'ok' };
         },

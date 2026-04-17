@@ -10,8 +10,10 @@ export class QuizController {
 
   constructor(
     private quiz: RuntimeQuiz,
-    private variables: VariableStore
-  ) {}
+    _variables: VariableStore
+  ) {
+    void _variables;
+  }
 
   startAttempt(): QuizAttempt | null {
     if (this.attemptCount >= this.quiz.attemptsAllowed) return null;
@@ -107,6 +109,35 @@ export class QuizController {
         const correct = parseFloat(question.correctAnswer as string);
         const tolerance = question.tolerance ?? 0;
         return Math.abs(num - correct) <= tolerance;
+      }
+
+      case 'hotspot': {
+        const regions = question.hotspotRegions ?? [];
+        return regions.some(r => r.regionId === response && r.isCorrect);
+      }
+
+      case 'matching':
+      case 'drag_drop': {
+        const targets = question.matchTargets ?? [];
+        if (targets.length === 0) return false;
+        try {
+          const placements = JSON.parse(response) as Record<string, string>;
+          return targets.every(t => placements[t.itemId] === t.targetId);
+        } catch {
+          return false;
+        }
+      }
+
+      case 'sequencing': {
+        const expected = question.correctSequence ?? [];
+        if (expected.length === 0) return false;
+        try {
+          const actual = JSON.parse(response) as string[];
+          return expected.length === actual.length &&
+            expected.every((id, i) => id === actual[i]);
+        } catch {
+          return false;
+        }
       }
 
       default:

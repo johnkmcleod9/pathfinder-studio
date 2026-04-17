@@ -10,7 +10,7 @@
 
 import JSZip from 'jszip';
 import { readFile } from 'fs/promises';
-import type { Manifest, AssetEntry } from './manifest.js';
+import type { Manifest } from './manifest.js';
 
 export interface LoadResult {
   project: unknown;
@@ -31,7 +31,9 @@ export interface LoadOptions {
   tolerateHashMismatch?: boolean;
 }
 
-export interface LoadValidationError {
+// Per-issue record collected during load. Distinct from the
+// LoadValidationError class below (which is the thrown wrapper).
+export interface LoadIssue {
   path: string;
   message: string;
   severity: 'error' | 'warning';
@@ -39,9 +41,6 @@ export interface LoadValidationError {
 
 /** Known required files in a .pathfinder ZIP */
 const REQUIRED_FILES = ['project.json'];
-
-/** Optional standard files */
-const OPTIONAL_FILES = ['manifest.json', 'quiz-banks.json'];
 
 /**
  * Load a .pathfinder ZIP from a Buffer.
@@ -51,7 +50,7 @@ export async function loadProject(
   options: LoadOptions = {}
 ): Promise<LoadResult> {
   const warnings: string[] = [];
-  const errors: LoadValidationError[] = [];
+  const errors: LoadIssue[] = [];
 
   // ── Parse ZIP ────────────────────────────────────────────────────────────
   let zip: JSZip;
@@ -62,7 +61,6 @@ export async function loadProject(
   }
 
   // ── Check required files ────────────────────────────────────────────────
-  const zipPaths = Object.keys(zip.files);
   for (const required of REQUIRED_FILES) {
     if (!zip.file(required)) {
       errors.push({ path: required, message: `Required file "${required}" is missing`, severity: 'error' });
@@ -188,8 +186,8 @@ export class InvalidZipError extends Error {
 }
 
 export class LoadValidationError extends Error {
-  errors: LoadValidationError[];
-  constructor(message: string, errors: LoadValidationError[]) {
+  errors: LoadIssue[];
+  constructor(message: string, errors: LoadIssue[]) {
     super(message);
     this.name = 'LoadValidationError';
     this.errors = errors;

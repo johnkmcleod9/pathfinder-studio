@@ -16,7 +16,6 @@ import type {
   QuizAttempt,
   QuizSuspendData,
   QuestionResult,
-  Question,
 } from './types.js';
 import { evaluateQuestion } from './questions.js';
 
@@ -209,7 +208,7 @@ export class QuizEngine {
     let latest: QuizAttempt | null = null;
     for (const attempt of this.attempts.values()) {
       if (attempt.completedAt) {
-        if (!latest || attempt.completedAt > latest.completedAt) {
+        if (!latest || !latest.completedAt || attempt.completedAt > latest.completedAt) {
           latest = attempt;
         }
       }

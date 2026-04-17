@@ -1,0 +1,31 @@
+# Test temp directories created by mkdtempSync (no parent dir)
+pathfinder-test-*/
+pathfinder-pkg-test-*/
+pathfinder-cli-test-*/
+pathfinder-parse-test-*/
+pathfinder-publish-*/
+pathfinder-rt-e2e-*/
+pathfinder-structure-test-*/
+pathfinder-lms-test-*/
+pathfinder-opt-test-*/
+
+# Vitest cache
+node_modules/.vite/
+
+# Build artifacts
+dist/
+coverage/
+junit.xml
+
+# Local preview artifacts
+course-preview/
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+tests/e2e/.tmp/
+e2e-junit.xml
+
+# Per-user Claude Code settings
+.claude/settings.local.json

@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { QuizEngine } from '../../src/quiz/engine.js';
-import { evaluateQuestion, evaluateMultipleChoice, evaluateMultipleResponse, evaluateTrueFalse, evaluateFillBlank, evaluateNumeric, evaluateMatching, evaluateSequencing } from '../../src/quiz/questions.js';
-import type { QuizConfig, Question, QuestionResult } from '../../src/quiz/types.js';
+import { evaluateQuestion, evaluateMultipleChoice, evaluateMultipleResponse, evaluateTrueFalse, evaluateFillBlank, evaluateNumeric, evaluateMatching, evaluateSequencing, evaluateHotspot, evaluateDragDrop } from '../../src/quiz/questions.js';
+import type { QuizConfig, Question } from '../../src/quiz/types.js';
 
 const BASE_QUIZ: QuizConfig = {
   id: 'quiz-001',
@@ -128,7 +128,7 @@ describe('Quiz Engine', () => {
     it('submitAnswer still works for current attempt', () => {
       const q: Question = { id: 'q1', type: 'true_false', text: 'Q', points: 10, correctAnswer: 'true', options: [] };
       const quiz = makeQuiz({ questions: [q], attemptsAllowed: 1 });
-      const { attemptId } = quiz.startAttempt()!;
+      quiz.startAttempt();
       const result = quiz.submitAnswer('q1', 'true');
       expect(result).not.toBeNull();
       expect(result!.correct).toBe(true);
@@ -232,7 +232,7 @@ describe('Question Evaluators', () => {
     it('all correct selected → full credit', () => {
       const q: Question = {
         id: 'q1', type: 'multiple_response', text: 'Q1', points: 2,
-        options: [{ id: 'a', isCorrect: true }, { id: 'b', isCorrect: true }, { id: 'c', isCorrect: false }],
+        options: [{ id: 'a', text: 'A', isCorrect: true }, { id: 'b', text: 'B', isCorrect: true }, { id: 'c', text: 'C', isCorrect: false }],
       };
       const result = evaluateMultipleResponse(q, ['a', 'b']);
       expect(result.correct).toBe(true);
@@ -242,7 +242,7 @@ describe('Question Evaluators', () => {
     it('partial correct → partial credit', () => {
       const q: Question = {
         id: 'q1', type: 'multiple_response', text: 'Q1', points: 2,
-        options: [{ id: 'a', isCorrect: true }, { id: 'b', isCorrect: true }, { id: 'c', isCorrect: false }],
+        options: [{ id: 'a', text: 'A', isCorrect: true }, { id: 'b', text: 'B', isCorrect: true }, { id: 'c', text: 'C', isCorrect: false }],
         partialCredit: true,
       };
       const result = evaluateMultipleResponse(q, ['a']); // only 1 of 2 correct
@@ -252,7 +252,7 @@ describe('Question Evaluators', () => {
     it('incorrect selected → no credit', () => {
       const q: Question = {
         id: 'q1', type: 'multiple_response', text: 'Q1', points: 2,
-        options: [{ id: 'a', isCorrect: true }, { id: 'b', isCorrect: false }],
+        options: [{ id: 'a', text: 'A', isCorrect: true }, { id: 'b', text: 'B', isCorrect: false }],
       };
       const result = evaluateMultipleResponse(q, ['b']);
       expect(result.correct).toBe(false);
@@ -262,7 +262,7 @@ describe('Question Evaluators', () => {
     it('all-or-nothing mode rejects partial', () => {
       const q: Question = {
         id: 'q1', type: 'multiple_response', text: 'Q1', points: 2,
-        options: [{ id: 'a', isCorrect: true }, { id: 'b', isCorrect: true }],
+        options: [{ id: 'a', text: 'A', isCorrect: true }, { id: 'b', text: 'B', isCorrect: true }],
         partialCredit: false,
       };
       const result = evaluateMultipleResponse(q, ['a']); // only 1 of 2
@@ -406,6 +406,112 @@ describe('Question Evaluators', () => {
       };
       const result = evaluateSequencing(q, ['a', 'b']);
       expect(result.correct).toBe(false);
+    });
+  });
+
+  describe('hotspot', () => {
+    it('click on correct region → correct', () => {
+      const q: Question = {
+        id: 'q1', type: 'hotspot', text: 'Click the correct region', points: 3,
+        attemptsAllowed: 0,
+        options: [
+          { id: 'r1', text: 'Top-left', isCorrect: true, regionId: 'region-a' },
+          { id: 'r2', text: 'Bottom-right', isCorrect: false, regionId: 'region-b' },
+        ],
+      };
+      const result = evaluateHotspot(q, 'region-a');
+      expect(result.correct).toBe(true);
+      expect(result.pointsAwarded).toBe(3);
+    });
+
+    it('click on wrong region → incorrect', () => {
+      const q: Question = {
+        id: 'q1', type: 'hotspot', text: 'Click the correct region', points: 3,
+        attemptsAllowed: 0,
+        options: [
+          { id: 'r1', text: 'Top-left', isCorrect: true, regionId: 'region-a' },
+          { id: 'r2', text: 'Bottom-right', isCorrect: false, regionId: 'region-b' },
+        ],
+      };
+      const result = evaluateHotspot(q, 'region-b');
+      expect(result.correct).toBe(false);
+      expect(result.pointsAwarded).toBe(0);
+    });
+
+    it('click on nonexistent region → incorrect', () => {
+      const q: Question = {
+        id: 'q1', type: 'hotspot', text: 'Click', points: 1,
+        attemptsAllowed: 0,
+        options: [
+          { id: 'r1', text: 'Correct spot', isCorrect: true, regionId: 'region-a' },
+        ],
+      };
+      const result = evaluateHotspot(q, 'no-such-region');
+      expect(result.correct).toBe(false);
+    });
+
+    it('evaluateQuestion routes hotspot correctly', () => {
+      const q: Question = {
+        id: 'q1', type: 'hotspot', text: 'Click', points: 2,
+        attemptsAllowed: 0,
+        options: [
+          { id: 'r1', text: 'Correct', isCorrect: true, regionId: 'region-x' },
+        ],
+      };
+      const result = evaluateQuestion(q, 'region-x', 0);
+      expect(result.correct).toBe(true);
+      expect(result.pointsAwarded).toBe(2);
+    });
+  });
+
+  describe('drag_drop', () => {
+    it('all items in correct zones → correct', () => {
+      const q: Question = {
+        id: 'q1', type: 'drag_drop', text: 'Drag items', points: 4,
+        attemptsAllowed: 0,
+        pairs: [
+          { itemId: 'item-a', targetId: 'zone-1' },
+          { itemId: 'item-b', targetId: 'zone-2' },
+        ],
+      };
+      const result = evaluateDragDrop(q, { 'item-a': 'zone-1', 'item-b': 'zone-2' });
+      expect(result.correct).toBe(true);
+      expect(result.pointsAwarded).toBe(4);
+    });
+
+    it('one wrong placement → incorrect (partial credit)', () => {
+      const q: Question = {
+        id: 'q1', type: 'drag_drop', text: 'Drag items', points: 4,
+        attemptsAllowed: 0,
+        pairs: [
+          { itemId: 'item-a', targetId: 'zone-1' },
+          { itemId: 'item-b', targetId: 'zone-2' },
+        ],
+      };
+      const result = evaluateDragDrop(q, { 'item-a': 'zone-1', 'item-b': 'zone-wrong' });
+      expect(result.correct).toBe(false);
+      expect(result.pointsAwarded).toBe(2);
+    });
+
+    it('all wrong → 0 points', () => {
+      const q: Question = {
+        id: 'q1', type: 'drag_drop', text: 'Drag items', points: 2,
+        attemptsAllowed: 0,
+        pairs: [{ itemId: 'x', targetId: 'y' }],
+      };
+      const result = evaluateDragDrop(q, { x: 'wrong' });
+      expect(result.pointsAwarded).toBe(0);
+    });
+
+    it('evaluateQuestion routes drag_drop correctly', () => {
+      const q: Question = {
+        id: 'q1', type: 'drag_drop', text: 'Drag', points: 2,
+        attemptsAllowed: 0,
+        pairs: [{ itemId: 'a', targetId: 'b' }],
+      };
+      const result = evaluateQuestion(q, { a: 'b' }, 0);
+      expect(result.correct).toBe(true);
+      expect(result.pointsAwarded).toBe(2);
     });
   });
 });

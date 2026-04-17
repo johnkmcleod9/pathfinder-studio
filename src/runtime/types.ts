@@ -161,6 +161,9 @@ export interface RuntimeQuestion {
   caseSensitive?: boolean;
   wildcard?: boolean;
   tolerance?: number;
+  hotspotRegions?: Array<{ regionId: string; isCorrect: boolean }>;
+  matchTargets?: Array<{ itemId: string; targetId: string }>;
+  correctSequence?: string[];
 }
 
 export interface RuntimeMediaManifest {

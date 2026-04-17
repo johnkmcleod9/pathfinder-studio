@@ -12,12 +12,21 @@ export {
 export { buildScormManifest, renderManifestXml } from './scorm-manifest.js';
 
 export {
+  generateScorm12Manifest,
+  validateScorm12Manifest,
+  type Scorm12ManifestOpts,
+  type Scorm12ValidationResult,
+} from './imsmanifest.js';
+
+export {
   optimizeMedia,
   mimeFromPath,
   subsetFont,
 } from './optimizer.js';
 
 export { assemblePackage } from './packager.js';
+
+export { STAGE_NAMES } from './types.js';
 
 export type {
   PublishOptions,
@@ -55,7 +64,6 @@ export type {
   ConditionalBranchIR,
   QuizQuestionIR,
   QuizOptionIR,
-  NavigationIR,
   ImsMetadata,
   ImsSequencing,
   ImsRollupRule,

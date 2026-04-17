@@ -6,6 +6,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as crypto from 'node:crypto';
+// @ts-ignore — adm-zip has no types published
 import AdmZip from 'adm-zip';
 import {
   OutputStandard,
@@ -13,16 +14,6 @@ import {
   RuntimeCourse,
   RuntimeSlide,
   RuntimeObject,
-  RuntimeLayer,
-  RuntimeTrigger,
-  RuntimeQuestion,
-  RuntimeVariable,
-  RuntimeMediaManifest,
-  RuntimeLMSConfig,
-  RuntimeBackground,
-  RuntimeNavigation,
-  RuntimeQuiz,
-  RuntimeInteraction,
 } from './types.js';
 import {
   buildScormManifest,
@@ -31,6 +22,8 @@ import {
   SCORM_12_ADAPTER,
   XAPI_ADAPTER,
 } from './scorm-manifest.js';
+import { BROWSER_RUNTIME } from './browser-runtime.js';
+import { generateTinCanXml } from './tincan.js';
 
 export interface PackagerOptions {
   standard: OutputStandard;
@@ -69,18 +62,18 @@ export async function assemblePackage(
     'Compiled course data'
   );
 
-  // --- Runtime engine (stub — actual runtime built separately) ---
-  // The runtime is bundled separately; here we add a placeholder
-  // that the build system replaces with the actual runtime.js
+  // --- Runtime engine ---
+  // Self-contained IIFE that installs `window.PathfinderRuntime`.
+  // Tested independently in tests/publish/browser-runtime.test.ts.
   zip.addFile(
     'pathfinder-runtime.js',
-    Buffer.from('// Pathfinder Runtime Placeholder — replace with actual runtime\n', 'utf-8'),
-    'Runtime engine stub'
+    Buffer.from(BROWSER_RUNTIME, 'utf-8'),
+    'Pathfinder browser runtime'
   );
   zip.addFile(
     'pathfinder-runtime.css',
-    Buffer.from('/* Pathfinder Runtime CSS Placeholder */\n', 'utf-8'),
-    'Runtime CSS stub'
+    Buffer.from(BROWSER_RUNTIME_CSS, 'utf-8'),
+    'Runtime CSS'
   );
 
   // --- LMS adapters ---
@@ -98,7 +91,11 @@ export async function assemblePackage(
   // --- Player shell ---
   zip.addFile(
     'player/player-shell.html',
-    Buffer.from(buildPlayerShell(opts.standard), 'utf-8')
+    Buffer.from(buildPlayerShell(opts.standard, {
+      lrsEndpoint: opts.lrsEndpoint,
+      lrsAuth: opts.lrsAuth,
+      masteryScore: opts.masteryScore,
+    }), 'utf-8')
   );
   zip.addFile(
     'player/player.css',
@@ -106,7 +103,10 @@ export async function assemblePackage(
   );
   zip.addFile(
     'player/player-i18n.json',
-    Buffer.from(JSON.stringify(buildI18n(), 'utf-8'), 'utf-8')
+    // JSON.stringify's 2nd arg is a replacer function/array, not an
+    // encoding — passing 'utf-8' here used to be silently ignored
+    // (TS now flags it). We don't need a replacer; pass null.
+    Buffer.from(JSON.stringify(buildI18n(), null, 2), 'utf-8')
   );
 
   // --- SCORM manifest ---
@@ -148,6 +148,44 @@ export async function assemblePackage(
   // --- HTML5-only entry point ---
   if (opts.standard === 'html5') {
     zip.addFile('index.html', Buffer.from(buildHtml5Index(), 'utf-8'));
+  }
+
+  // --- xAPI package descriptor ---
+  if (opts.standard === 'xapi') {
+    // Many LRSes (Watershed, SCORM Cloud, Yet Analytics) read tincan.xml
+    // at the package root to register the activity. Without it the .zip
+    // imports as opaque files and never reports statements.
+    const courseId = course.metadata?.id ?? 'course';
+    // Per the xAPI spec the activity id must be an absolute IRI. If the
+    // course id already looks like a URL, use it; otherwise mint one
+    // under a stable pathfinder.local namespace so LRSes don't reject
+    // the package.
+    const isIri = /^[a-z][a-z0-9+.-]*:/i.test(courseId);
+    const activityId = isIri
+      ? courseId
+      : `https://pathfinder.local/courses/${encodeURIComponent(courseId)}`;
+    const slides = (course.slides ?? []).map((s) => ({
+      id: s.id,
+      title: s.title || s.id,
+    }));
+    zip.addFile(
+      'tincan.xml',
+      Buffer.from(
+        generateTinCanXml({
+          activityId,
+          title: opts.title,
+          launch: 'index.html',
+          description: opts.author ? `Authored by ${opts.author}` : undefined,
+          language: opts.language ?? 'en-US',
+          slides,
+        }),
+        'utf-8'
+      )
+    );
+    // xAPI packages also need a launch entry so an LRS or content host
+    // can open the .zip directly. Mirror the html5 path but include the
+    // xAPI adapter wiring.
+    zip.addFile('index.html', Buffer.from(buildXapiIndex(), 'utf-8'));
   }
 
   // --- Copy media assets ---
@@ -202,7 +240,22 @@ function copyDirRecursive(
 
 // ---- HTML builders ----
 
-function buildPlayerShell(standard: OutputStandard): string {
+interface PlayerShellConfig {
+  lrsEndpoint?: string;
+  lrsAuth?: string;
+  masteryScore?: number;
+}
+
+function buildPlayerShell(standard: OutputStandard, cfg: PlayerShellConfig = {}): string {
+  // Build the JSON config that gets baked into the shell.  Only emit defined
+  // values so the resulting object doesn't leak undefineds into the JSON
+  // serializer (which would drop them anyway, but explicitness is clearer).
+  const baked: Record<string, unknown> = {};
+  if (cfg.lrsEndpoint !== undefined) baked['lrsEndpoint'] = cfg.lrsEndpoint;
+  if (cfg.lrsAuth !== undefined) baked['lrsAuth'] = cfg.lrsAuth;
+  if (cfg.masteryScore !== undefined) baked['masteryScore'] = cfg.masteryScore;
+  const configJson = jsonForScript(baked);
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -222,7 +275,8 @@ function buildPlayerShell(standard: OutputStandard): string {
   <script src="../pathfinder-runtime.js"></script>
   <script src="../lms/${standard === 'scorm2004' ? 'scorm-2004' : standard === 'scorm12' ? 'scorm-12' : 'xapi'}-adapter.js"></script>
   <script>
-    var config = window.PATHFINDER_CONFIG || {};
+    var PATHFINDER_BAKED_CONFIG = ${configJson};
+    var config = Object.assign({}, PATHFINDER_BAKED_CONFIG, window.PATHFINDER_CONFIG || {});
     var courseData = null;
     var runtime = null;
 
@@ -262,6 +316,16 @@ function buildPlayerShell(standard: OutputStandard): string {
       document.getElementById('btn-next').onclick = function() { runtime.navigateNext(); };
       runtime.on('slidechange', function(slideId, idx, total) {
         document.getElementById('slide-counter').textContent = (idx + 1) + ' / ' + total;
+      });
+      // Bind exit hooks so session_time + Terminate are pushed
+      // even when the learner just closes the tab.  We bind both
+      // beforeunload and visibilitychange because some browsers
+      // (mobile Safari especially) skip beforeunload on tab swipe.
+      var doTerminate = function() { try { runtime.terminate(); } catch (_) {} };
+      window.addEventListener('beforeunload', doTerminate);
+      window.addEventListener('pagehide', doTerminate);
+      document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'hidden') doTerminate();
       });
     }
 
@@ -308,9 +372,11 @@ function buildI18n(): Record<string, Record<string, string>> {
   };
 }
 
-function buildLaunchHtml(standard: OutputStandard): string {
-  if (standard === 'scorm2004') {
-    return `<!DOCTYPE html>
+function buildLaunchHtml(_standard: OutputStandard): string {
+  // The launch wrapper is identical for SCORM 1.2 and 2004 — the LMS
+  // loads it, then we hand off to the player shell which handles the
+  // standard-specific adapter discovery.
+  return `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
@@ -326,8 +392,6 @@ function buildLaunchHtml(standard: OutputStandard): string {
   <p>Loading course...</p>
 </body>
 </html>`;
-  }
-  return buildLaunchHtml('scorm2004');
 }
 
 function buildHtml5Index(): string {
@@ -364,13 +428,87 @@ function buildHtml5Index(): string {
         });
         document.getElementById('btn-prev').onclick = function() { runtime.navigatePrev(); };
         document.getElementById('btn-next').onclick = function() { runtime.navigateNext(); };
+        var doTerminate = function() { try { runtime.terminate(); } catch (_) {} };
+        window.addEventListener('beforeunload', doTerminate);
+        window.addEventListener('pagehide', doTerminate);
       });
   </script>
 </body>
 </html>`;
 }
 
-function buildSlideHtml(slide: RuntimeSlide, course: RuntimeCourse, standard: OutputStandard): string {
+function buildXapiIndex(): string {
+  // xAPI launch entry — wires the XAPIAdapter so statements flow to the
+  // configured LRS. The endpoint + auth come from window.PATHFINDER_CONFIG
+  // which the host page (or an LRS launch redirect) is expected to set.
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pathfinder Course</title>
+  <link rel="stylesheet" href="pathfinder-runtime.css">
+  <link rel="stylesheet" href="player/player.css">
+</head>
+<body>
+  <div id="pathfinder-course"></div>
+  <div id="pathfinder-nav">
+    <button id="btn-prev">&#8592; Previous</button>
+    <span id="slide-counter"></span>
+    <button id="btn-next">Next &#8594;</button>
+  </div>
+  <script src="pathfinder-runtime.js"></script>
+  <script src="lms/xapi-adapter.js"></script>
+  <script>
+    var config = window.PATHFINDER_CONFIG || {};
+    var runtime = null;
+    fetch('course.json')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var lmsAdapter = null;
+        if (window.XAPIAdapter) {
+          window.XAPIAdapter.configure({
+            endpoint: config.lrsEndpoint || (data.lms && data.lms.lrsEndpoint) || '',
+            auth: config.lrsAuth || (data.lms && data.lms.lrsAuth) || '',
+            activityId: (data.metadata && data.metadata.id) || 'course'
+          });
+          window.XAPIAdapter.initialized();
+          lmsAdapter = window.XAPIAdapter;
+        }
+        runtime = new PathfinderRuntime({
+          course: data,
+          lmsAdapter: lmsAdapter || {},
+          container: document.getElementById('pathfinder-course')
+        });
+        runtime.start();
+        runtime.on('slidechange', function(slideId, idx, total) {
+          document.getElementById('slide-counter').textContent = (idx + 1) + ' / ' + total;
+          if (window.XAPIAdapter) window.XAPIAdapter.experienced(slideId);
+        });
+        runtime.on('quizcomplete', function(score) {
+          if (window.XAPIAdapter) {
+            if (score.passed) window.XAPIAdapter.passed(score.percent / 100);
+            else window.XAPIAdapter.failed(score.percent / 100);
+          }
+        });
+        runtime.on('coursecomplete', function() {
+          if (window.XAPIAdapter) window.XAPIAdapter.completed();
+        });
+        runtime.on('sessionend', function(payload) {
+          if (window.XAPIAdapter) window.XAPIAdapter.terminate();
+        });
+        document.getElementById('btn-prev').onclick = function() { runtime.navigatePrev(); };
+        document.getElementById('btn-next').onclick = function() { runtime.navigateNext(); };
+        var doTerminate = function() { try { runtime.terminate(); } catch (_) {} };
+        window.addEventListener('beforeunload', doTerminate);
+        window.addEventListener('pagehide', doTerminate);
+      });
+  </script>
+</body>
+</html>`;
+}
+
+function buildSlideHtml(slide: RuntimeSlide, course: RuntimeCourse, _standard: OutputStandard): string {
   const bg = slide.background ?? { type: 'solid', color: '#FFFFFF' };
   const bgStyle = bg.type === 'solid'
     ? `background-color: ${bg.color ?? '#FFFFFF'}`
@@ -444,6 +582,22 @@ function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+/**
+ * Serialize a value as JSON safe for embedding inside an inline <script> tag.
+ * Escapes `<`, `>`, line separators, and Unicode line/paragraph separators
+ * which are valid in JSON strings but break out of HTML script context or
+ * trip the JS lexer. Mirrors the convention used by serialize-javascript /
+ * Next.js __NEXT_DATA__.
+ */
+function jsonForScript(value: unknown): string {
+  return JSON.stringify(value)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+}
+
 function escapeAttr(s: string): string {
   return s.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
@@ -480,6 +634,27 @@ function computeChecksum(filePath: string): string {
   hash.update(fs.readFileSync(filePath));
   return hash.digest('hex');
 }
+
+// ---- Runtime CSS ----
+
+const BROWSER_RUNTIME_CSS = `/* Pathfinder Runtime CSS */
+.pf-slide {
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+}
+.pf-slide [data-object-id] {
+  box-sizing: border-box;
+}
+.pf-slide button[data-object-id] {
+  cursor: pointer;
+  border: none;
+  font: inherit;
+}
+.pf-slide img[data-object-id] {
+  object-fit: contain;
+}
+`;
 
 // ---- Supporting scripts ----
 

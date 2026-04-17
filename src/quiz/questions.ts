@@ -7,7 +7,7 @@
  * 3. Returns { correct, pointsAwarded, feedback }
  */
 
-import type { Question, QuestionResult, AnswerOption } from './types.js';
+import type { Question, QuestionResult } from './types.js';
 
 // ─── Scoring helpers ─────────────────────────────────────────────────────────
 
@@ -111,7 +111,7 @@ export function evaluateTrueFalse(
   question: Question,
   answer: string | boolean
 ): { correct: boolean; pointsAwarded: number; feedback?: string } {
-  const expected = question.correctAnswer === 'true' || question.correctAnswer === true;
+  const expected = question.correctAnswer === 'true' || (question.correctAnswer as unknown) === true;
   const given = answer === true || answer === 'true' || answer === 'True';
 
   const correct = given === expected;
@@ -233,7 +233,8 @@ export function evaluateQuestion(
   attemptCount: number
 ): QuestionResult {
   // Check if attempts are exhausted
-  if (question.attemptsAllowed > 0 && attemptCount >= question.attemptsAllowed) {
+  const attemptsAllowed = question.attemptsAllowed ?? 0;
+  if (attemptsAllowed > 0 && attemptCount >= attemptsAllowed) {
     return {
       questionId: question.id,
       pointsAwarded: 0,
@@ -241,7 +242,7 @@ export function evaluateQuestion(
       correct: false,
       answered: false,
       attemptCount,
-      feedback: `No attempts remaining (${question.attemptsAllowed} used).`,
+      feedback: `No attempts remaining (${attemptsAllowed} used).`,
     };
   }
 

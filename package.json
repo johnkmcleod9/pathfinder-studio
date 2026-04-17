@@ -1,17 +1,71 @@
 {
   "name": "pathfinder-studio",
   "version": "0.1.0",
-  "description": "JSON schema library for .pathfinder project file format",
+  "description": "Library + CLI for the .pathfinder course file format — parse, compile, publish to SCORM 1.2 / 2004 / xAPI / HTML5",
   "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./publish": {
+      "types": "./dist/publish/index.d.ts",
+      "import": "./dist/publish/index.js"
+    },
+    "./pipeline": {
+      "types": "./dist/pipeline/index.d.ts",
+      "import": "./dist/pipeline/index.js"
+    },
+    "./runtime": {
+      "types": "./dist/runtime/index.d.ts",
+      "import": "./dist/runtime/index.js"
+    },
+    "./quiz": {
+      "types": "./dist/quiz/index.d.ts",
+      "import": "./dist/quiz/index.js"
+    },
+    "./variables": {
+      "types": "./dist/variables/index.d.ts",
+      "import": "./dist/variables/index.js"
+    },
+    "./triggers": {
+      "types": "./dist/triggers/index.d.ts",
+      "import": "./dist/triggers/index.js"
+    },
+    "./cli": {
+      "types": "./dist/cli.d.ts",
+      "import": "./dist/cli.js"
+    }
+  },
+  "bin": {
+    "pathfinder": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.build.json && cp src/schemas/*.json dist/schemas/",
+    "prepublishOnly": "npm run build && npm test",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "test:ci": "vitest run --reporter=junit --outputFile.junit=./junit.xml",
+    "test:ci": "vitest run --coverage --reporter=junit --outputFile.junit=./junit.xml",
+    "test:e2e": "playwright test",
+    "test:e2e:update": "playwright test --update-snapshots",
+    "test:e2e:install": "playwright install --with-deps chromium",
+    "typecheck": "tsc --noEmit",
+    "pathfinder": "npx tsx src/cli.ts",
     "validate": "npx tsx src/cli.ts"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "@types/adm-zip": "^0.5.8",
     "@types/node": "^20.11.0",
+    "@vitest/coverage-v8": "^1.2.0",
     "jsdom": "^29.0.1",
     "tsx": "^4.7.0",
     "typescript": "^5.3.3",

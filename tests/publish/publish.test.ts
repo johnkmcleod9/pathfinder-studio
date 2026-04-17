@@ -1,7 +1,6 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import * as crypto from 'node:crypto';
 import AdmZip from 'adm-zip';
 import {
   publish,
@@ -9,7 +8,7 @@ import {
   mimeFromPath,
   optimizeMedia,
 } from '../../src/publish/index.js';
-import type { OutputStandard, PublishReport } from '../../src/publish/types.js';
+import type { OutputStandard } from '../../src/publish/types.js';
 
 // ---- Test helpers ----
 
@@ -22,12 +21,6 @@ function makeTestZip(entries: Record<string, string | Buffer>): string {
   }
   zip.writeZip(zipPath);
   return zipPath;
-}
-
-function readZipEntry(zipPath: string, entryName: string): Buffer | null {
-  const zip = new AdmZip(zipPath);
-  const entry = zip.getEntry(entryName);
-  return entry ? entry.getData() : null;
 }
 
 function tmpDir(): string {
@@ -249,6 +242,11 @@ describe('Publish Pipeline', () => {
           outputPath: outPath,
           standard: std,
           quality: 'low',
+          // xAPI requires an LRS endpoint + auth; supply both so this
+          // smoke test only fails on actual pipeline regressions.
+          ...(std === 'xapi'
+            ? { lrsEndpoint: 'https://lrs.example.com/xapi', lrsAuth: 'Basic abc' }
+            : {}),
         });
         expect(report.success).toBe(true);
         expect(report.standard).toBe(std);

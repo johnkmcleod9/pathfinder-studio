@@ -43,8 +43,8 @@ export class SCORM12Adapter extends BaseAdapter {
   findAPI(win: Window & typeof globalThis): SCORM12API | null {
     let current: (Window & typeof globalThis) | null = win;
     while (current && !(current as unknown as { API?: SCORM12API }).API) {
-      current = current.parent;
-      if (current === win) break; // Avoid infinite loop
+      current = current.parent as Window & typeof globalThis;
+      if (current === win) break;
     }
     return (current as unknown as { API?: SCORM12API }).API ?? null;
   }
@@ -128,7 +128,7 @@ export class SCORM2004Adapter extends BaseAdapter {
       if (api) return api;
       const altApi = (current as unknown as { API?: SCORM2004API }).API;
       if (altApi) return altApi;
-      current = current.parent;
+      current = current.parent as Window & typeof globalThis;
     }
     return null;
   }

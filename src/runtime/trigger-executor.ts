@@ -5,7 +5,6 @@ import { MediaController } from './media-controller.js';
 
 // ---- TriggerExecutor ----
 
-type LMSStatementSender = LMSAdapter extends { sendStatement: infer S } ? S : never;
 
 /**
  * Registers event listeners and executes trigger action graphs.
@@ -19,9 +18,11 @@ export class TriggerExecutor {
   constructor(
     private variables: VariableStore,
     private navigation: NavigationEngine,
-    private media: MediaController,
+    _media: MediaController,
     private lms: LMSAdapter
-  ) {}
+  ) {
+    void _media;
+  }
 
   registerSlideTriggers(slide: RuntimeSlide): void {
     for (const trigger of slide.triggers) {

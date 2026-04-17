@@ -15,71 +15,50 @@
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import * as crypto from 'node:crypto';
+// @ts-ignore — adm-zip has no types published
 import AdmZip from 'adm-zip';
-import { load as loadYaml } from 'js-yaml';
 import {
   PublishOptions,
   PublishReport,
-  PublishError,
-  PublishWarning,
   CourseIR,
   StageId,
   OutputStandard,
-  QualityPreset,
   ImsManifest,
   RuntimeCourse,
-  RuntimeSlide,
-  RuntimeObject,
-  RuntimeBackground,
-  RuntimeLayer,
-  RuntimeTrigger,
-  RuntimeQuestion,
-  RuntimeVariable,
-  RuntimeLMSConfig,
-  RuntimeMediaManifest,
-  MediaAssetIR,
-  SlideIR,
-  ObjectIR,
-  LayerIR,
-  BackgroundIR,
-  MediaRefIR,
-  ResolvedTriggerIR,
-  ActionNodeIR,
-  VariableIR,
-  QuizStateMachineIR,
-  NavigationIR,
-  CourseMetadataIR,
-  RectIR,
-  ConditionIR,
-  MediaAssetIR,
 } from './types.js';
 import { buildScormManifest } from './scorm-manifest.js';
 import { optimizeMedia } from './optimizer.js';
+import { compileCourseIR, buildRuntimeCourse } from './compiler.js';
+import { assemblePackage } from './packager.js';
 
 // ---- Pipeline ----
 
 export class PublishPipeline {
   private opts: PublishOptions;
-  private report: Omit<PublishReport, 'outputPath' | 'packageSize' | 'duration' | 'checksum'>;
+  private report: Omit<PublishReport, 'duration'> & { duration?: number };
   private startTime: number = 0;
   private cancelled = false;
   private baseDir: string;
   private stageStart: Record<StageId, number> = {} as Record<StageId, number>;
   private extractDir: string;
   private workDir: string;
+  private courseIR?: CourseIR;
+  private runtimeCourse?: RuntimeCourse;
+  private mediaHashes: Map<string, string> = new Map();
 
   constructor(opts: PublishOptions) {
     this.opts = {
-      quality: 'medium',
       validateOnly: false,
       masteryScore: 80,
       ...opts,
+      quality: opts.quality ?? 'medium',
     };
     this.report = {
       success: false,
       slideCount: 0,
       mediaCount: 0,
+      mediaOptimized: 0,
+      mediaBytesSaved: 0,
       standard: this.opts.standard,
       quality: this.opts.quality,
       stageDurations: {} as Record<StageId, number>,
@@ -139,9 +118,6 @@ export class PublishPipeline {
     this.report.warnings.push({ code, message });
   }
 
-  private stageDuration(stage: StageId): number {
-    return this.report.stageDurations[stage] ?? 0;
-  }
 
   // ---- Stage 0: Unpack ----
 
@@ -243,7 +219,7 @@ export class PublishPipeline {
       const layers = slide['layers'] as Record<string, Record<string, unknown>>[] | undefined;
       if (layers) {
         for (const layer of layers) {
-          layerIds.add(layer['id'] as string);
+          layerIds.add(layer['id'] as unknown as string);
         }
       }
       if (objects) {
@@ -311,9 +287,25 @@ export class PublishPipeline {
 
   private async stage3_CompileIR(): Promise<void> {
     const projectPath = path.join(this.extractDir, 'project.json');
+    const manifestPath = path.join(this.extractDir, 'manifest.json');
     const project = JSON.parse(fs.readFileSync(projectPath, 'utf-8')) as Record<string, unknown>;
-    const slides = project['slides'] as Record<string, unknown>[];
-    this.report.slideCount = slides.length;
+    const manifest = fs.existsSync(manifestPath)
+      ? (JSON.parse(fs.readFileSync(manifestPath, 'utf-8')) as Record<string, unknown>)
+      : {};
+
+    this.courseIR = compileCourseIR(project, manifest);
+    this.runtimeCourse = buildRuntimeCourse(this.courseIR, {
+      standard: this.opts.standard,
+      masteryScore: this.opts.masteryScore,
+      lrsEndpoint: this.opts.lrsEndpoint,
+      lrsAuth: this.opts.lrsAuth,
+    });
+    this.report.slideCount = this.courseIR.slides.length;
+
+    // Pre-populate media hash map for packager (content-addressed paths)
+    for (const asset of this.courseIR.mediaManifest) {
+      this.mediaHashes.set(asset.hash || asset.id, asset.srcPath || asset.path);
+    }
   }
 
   // ---- Stage 4: LMS Adapter ----
@@ -321,6 +313,62 @@ export class PublishPipeline {
   private async stage4_LmsAdapter(): Promise<void> {
     if (this.report.errors.length > 0) {
       this.warn('PUBLISHING_WITH_ERRORS', 'Continuing despite validation errors');
+    }
+
+    const std = this.opts.standard;
+
+    // ---- xAPI: require a usable LRS endpoint ----
+    if (std === 'xapi') {
+      const endpoint = this.opts.lrsEndpoint;
+      if (!endpoint || endpoint.trim() === '') {
+        this.error(
+          4,
+          'XAPI_MISSING_LRS_ENDPOINT',
+          'xAPI publish requires an LRS endpoint (--lrs-endpoint)'
+        );
+      } else if (!isValidLrsUrl(endpoint)) {
+        this.error(
+          4,
+          'XAPI_INVALID_LRS_ENDPOINT',
+          'LRS endpoint must be a valid http(s) URL'
+        );
+      } else {
+        if (!isHttpsUrl(endpoint)) {
+          this.warn(
+            'XAPI_INSECURE_LRS_ENDPOINT',
+            'LRS endpoint uses http:// — statements will be sent in clear text'
+          );
+        }
+        if (!this.opts.lrsAuth || this.opts.lrsAuth.trim() === '') {
+          this.warn(
+            'XAPI_MISSING_AUTH',
+            'No LRS auth header provided — most LRSes will reject anonymous statements'
+          );
+        }
+      }
+    }
+
+    // ---- SCORM: validate mastery score ----
+    if (std === 'scorm12' || std === 'scorm2004') {
+      const ms = this.opts.masteryScore;
+      if (ms !== undefined && (typeof ms !== 'number' || !Number.isFinite(ms) || ms < 0 || ms > 100)) {
+        this.error(
+          4,
+          'SCORM_INVALID_MASTERY_SCORE',
+          'masteryScore must be a finite number between 0 and 100'
+        );
+      }
+    }
+
+    // ---- SCORM 1.2: warn on suspend-data overflow risk ----
+    if (std === 'scorm12' && this.runtimeCourse) {
+      const projectedBytes = estimateSuspendDataBytes(this.runtimeCourse);
+      if (projectedBytes > SCORM12_SUSPEND_DATA_LIMIT_BYTES) {
+        this.warn(
+          'SCORM12_SUSPEND_DATA_RISK',
+          `Course state may exceed the SCORM 1.2 4KB suspend_data limit (estimated ${projectedBytes} bytes). Consider SCORM 2004 for resume support.`
+        );
+      }
     }
   }
 
@@ -330,42 +378,122 @@ export class PublishPipeline {
     const mediaDir = path.join(this.extractDir, 'media');
     const contentDir = path.join(this.extractDir, 'content');
     const dirs = [mediaDir, contentDir].filter((d) => fs.existsSync(d));
-    let optimized = 0;
+
+    // Collect all media file paths first, then optimize in parallel.
+    const mediaPaths: string[] = [];
     for (const dir of dirs) {
       const files = fs.readdirSync(dir);
       for (const file of files) {
         const filePath = path.join(dir, file);
         const stat = fs.statSync(filePath);
-        if (!stat.isFile()) continue;
-        const result = await optimizeMedia(filePath, this.opts.quality);
-        if (result.optimized) optimized++;
+        if (stat.isFile()) mediaPaths.push(filePath);
       }
     }
-    this.report.mediaCount = optimized;
+
+    const results = await Promise.all(
+      mediaPaths.map((filePath) => optimizeMedia(filePath, this.opts.quality))
+    );
+
+    let total = mediaPaths.length;
+    let optimized = 0;
+    let bytesSaved = 0;
+    for (const result of results) {
+      if (result.optimized) {
+        optimized++;
+        bytesSaved += result.savedBytes;
+      }
+    }
+
+    this.report.mediaCount = total;
+    this.report.mediaOptimized = optimized;
+    this.report.mediaBytesSaved = bytesSaved;
   }
 
   // ---- Stage 6: Package ----
 
   private async stage6_Package(): Promise<void> {
     fs.mkdirSync(this.workDir, { recursive: true });
+
+    // Skip packaging if validation has failed or validateOnly is set.
+    if (this.report.errors.length > 0) return;
+    if (this.opts.validateOnly) return;
+    if (!this.runtimeCourse) {
+      this.error(6, 'NO_COMPILED_COURSE', 'Cannot package — no compiled course IR');
+      return;
+    }
+
+    try {
+      const result = await assemblePackage(
+        {
+          course: this.runtimeCourse,
+          courseIR: this.courseIR,
+          extractDir: this.extractDir,
+          workDir: this.workDir,
+          mediaHashes: this.mediaHashes,
+        },
+        {
+          standard: this.opts.standard,
+          quality: this.opts.quality ?? 'medium',
+          masteryScore: this.opts.masteryScore,
+          title: this.runtimeCourse.metadata.title,
+          author: this.runtimeCourse.metadata.author,
+          language: this.runtimeCourse.metadata.language,
+          lrsEndpoint: this.opts.lrsEndpoint,
+          lrsAuth: this.opts.lrsAuth,
+        },
+        this.opts.outputPath
+      );
+
+      this.report.outputPath = this.opts.outputPath;
+      this.report.checksum = result.checksum;
+    } catch (err: unknown) {
+      const e = err as Error;
+      this.error(6, 'PACKAGE_FAILED', `Failed to assemble package: ${e.message}`, e.stack);
+    }
   }
 
   // ---- Stage 7: Output ----
 
   private async stage7_Output(): Promise<void> {
-    if (this.report.errors.length > 0 && !this.opts.validateOnly) {
-      // Don't write output if validation failed
+    // If validation failed or validateOnly, no file was written — report stops here.
+    if (this.report.errors.length > 0) return;
+    if (this.opts.validateOnly) return;
+    if (!this.report.outputPath) return;
+
+    // Populate final output metadata now that the ZIP exists on disk.
+    try {
+      const stat = fs.statSync(this.report.outputPath);
+      this.report.packageSize = stat.size;
+    } catch (err: unknown) {
+      const e = err as Error;
+      this.error(7, 'OUTPUT_MISSING', `Output file not found after packaging: ${e.message}`);
     }
   }
 
   // ---- Report ----
 
   private buildReport(): PublishReport {
-    return {
-      ...this.report,
-      success: this.report.errors.length === 0,
+    const success = this.report.errors.length === 0;
+    const report: PublishReport = {
+      success,
+      slideCount: this.report.slideCount,
+      mediaCount: this.report.mediaCount,
+      mediaOptimized: this.report.mediaOptimized,
+      mediaBytesSaved: this.report.mediaBytesSaved,
+      standard: this.report.standard,
+      quality: this.report.quality,
+      stageDurations: this.report.stageDurations,
+      errors: this.report.errors,
+      warnings: this.report.warnings,
       duration: Date.now() - this.startTime,
     };
+    // Only include output metadata when a package was actually written.
+    if (success && !this.opts.validateOnly && this.report.outputPath) {
+      report.outputPath = this.report.outputPath;
+      if (this.report.packageSize !== undefined) report.packageSize = this.report.packageSize;
+      if (this.report.checksum) report.checksum = this.report.checksum;
+    }
+    return report;
   }
 }
 
@@ -381,6 +509,49 @@ export async function publish(
 
 export function cancel(pipeline: PublishPipeline): void {
   pipeline.cancel();
+}
+
+// ---- Stage 4 helpers ----
+
+// SCORM 1.2 spec: cmi.suspend_data is limited to 4096 characters.
+const SCORM12_SUSPEND_DATA_LIMIT_BYTES = 4096;
+
+function isValidLrsUrl(s: string): boolean {
+  try {
+    const u = new URL(s);
+    return u.protocol === 'http:' || u.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+function isHttpsUrl(s: string): boolean {
+  try {
+    return new URL(s).protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Estimate the bytes the runtime will need to persist for resume support.
+ * Captures: the variable map (the dominant contributor), current slide id,
+ * and quiz response state.  This is an upper-bound proxy used for warning
+ * users away from SCORM 1.2 when the course will not fit in 4KB.
+ */
+function estimateSuspendDataBytes(course: RuntimeCourse): number {
+  const sample = {
+    _v: 1,
+    slide: course.navigation?.entry ?? '',
+    attempt: 0,
+    variables: course.variables ?? {},
+    quiz: course.quiz ? { id: course.quiz.id, responses: {} } : undefined,
+  };
+  // base64 inflates the encoded payload by ~4/3 (the runtime base64-encodes
+  // suspend_data before SetValue) — match that here so the warning fires
+  // before the runtime would silently truncate.
+  const json = JSON.stringify(sample);
+  return Math.ceil(json.length * 4 / 3);
 }
 
 // ---- SCORM Manifest Builder ----

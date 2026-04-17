@@ -1,0 +1,15 @@
+{
+  "version": "1.0.0",
+  "assets": {
+    "media/hero.png": {
+      "path": "media/hero.png",
+      "type": "image",
+      "mimeType": "image/png"
+    },
+    "media/badge.png": {
+      "path": "media/badge.png",
+      "type": "image",
+      "mimeType": "image/png"
+    }
+  }
+}

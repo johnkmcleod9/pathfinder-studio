@@ -48,7 +48,9 @@ export interface PublishReport {
   outputPath?: string;
   packageSize?: number;         // bytes
   slideCount: number;
-  mediaCount: number;
+  mediaCount: number;           // total media files processed by Stage 5
+  mediaOptimized: number;       // count of files the optimizer actually shrank
+  mediaBytesSaved: number;      // sum of (originalSize - optimizedSize)
   standard: OutputStandard;
   quality: QualityPreset;
   duration: number;             // ms
@@ -105,7 +107,7 @@ export interface SlideIR {
 
 export interface ObjectIR {
   id: string;
-  type: string;                // 'text' | 'image' | 'shape' | 'button' | 'hotspot' | 'drag-drop' | 'video' | 'audio'
+  type: string;                // 'text' | 'image' | 'shape' | 'button' | 'hotspot' | 'drag-drop' | 'video' | 'audio' | 'quiz'
   rect: RectIR;
   content?: string;            // text/html content
   style?: Record<string, unknown>;
@@ -114,6 +116,7 @@ export interface ObjectIR {
   visibility: VisibilityIR;
   states?: Record<string, Record<string, unknown>>;
   interactions?: InteractionIR[];
+  questionId?: string;         // for type === 'quiz', references a quiz question by id
 }
 
 export interface RectIR {
@@ -177,6 +180,7 @@ export interface ResolvedTriggerIR {
   id: string;
   event: EventIR;
   actionGraph: ActionNodeIR;
+  conditions?: ConditionIR[];
   priority: number;
 }
 
@@ -239,6 +243,8 @@ export interface QuizQuestionIR {
   pairs?: Array<{ key: string; value: string }>;
   hotspotRegion?: RectIR;
   attemptsAllowed?: number;
+  matchTargets?: Array<{ id: string; text: string }>;
+  correctSequence?: string[];
 }
 
 export interface QuizOptionIR {
@@ -246,6 +252,7 @@ export interface QuizOptionIR {
   text: string;
   isCorrect?: boolean;
   weight?: number;
+  matchTarget?: string;
 }
 
 export interface NavigationIR {
@@ -376,6 +383,16 @@ export interface RuntimeObject {
   style?: Record<string, unknown>;
   states?: Record<string, Record<string, unknown>>;
   interactions?: RuntimeInteraction[];
+  visibility?: RuntimeVisibility;
+  questionId?: string;         // for type === 'quiz', references a quiz question by id
+}
+
+export interface RuntimeVisibility {
+  initial: 'visible' | 'hidden';
+  conditional: Array<{
+    conditions: ConditionIR[];
+    then: 'visible' | 'hidden';
+  }>;
 }
 
 export interface RuntimeBackground {
@@ -412,6 +429,13 @@ export interface RuntimeVariable {
   type: 'boolean' | 'number' | 'text';
   default: unknown;
   scope: 'course' | 'slide' | 'local';
+  /** When true and lmsMapping.key is set, the runtime pushes value
+   * changes to the LMS via lmsAdapter.SetValue + Commit. */
+  exportToLMS?: boolean;
+  lmsMapping?: {
+    standard: 'scorm2004' | 'scorm12';
+    key: string;
+  };
 }
 
 export interface RuntimeNavigation {
@@ -435,11 +459,13 @@ export interface RuntimeQuestion {
   type: string;
   text: string;
   points: number;
-  options?: Array<{ id: string; label: string; isCorrect: boolean }>;
+  options?: Array<{ id: string; label: string; isCorrect: boolean; matchTarget?: string }>;
   correctAnswer?: string | string[];
   caseSensitive?: boolean;
   wildcard?: boolean;
   tolerance?: number;
+  matchTargets?: Array<{ id: string; text: string }>;
+  correctSequence?: string[];
 }
 
 export interface RuntimeMediaManifest {
