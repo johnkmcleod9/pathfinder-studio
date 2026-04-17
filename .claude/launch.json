@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "course-tour-static",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8080"],
+      "port": 8080
+    },
+    {
+      "name": "course-preview-static",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8081", "--directory", "course-preview"],
+      "port": 8081
+    },
+    {
+      "name": "playwright-report",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["playwright", "show-report", "--host", "127.0.0.1"],
+      "port": 9323
+    }
+  ]
+}

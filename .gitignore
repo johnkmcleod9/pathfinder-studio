@@ -26,3 +26,6 @@ playwright-report/
 playwright/.cache/
 tests/e2e/.tmp/
 e2e-junit.xml
+
+# Per-user Claude Code settings
+.claude/settings.local.json
