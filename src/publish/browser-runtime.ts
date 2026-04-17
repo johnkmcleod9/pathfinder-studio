@@ -613,6 +613,13 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
     }
 
     el.setAttribute('data-object-id', obj.id);
+    // Tag every rendered object with a stable class so the runtime
+    // stylesheet (pathfinder-runtime.css) can provide beautiful
+    // defaults per-type. Authors can still override via obj.style,
+    // which _applyStyle() writes as inline styles and therefore
+    // wins over the class rules.
+    var typeClass = 'pf-object pf-object-' + (obj.type || 'unknown');
+    el.className = el.className ? (el.className + ' ' + typeClass) : typeClass;
     el.style.position = 'absolute';
     el.style.left = x + 'px';
     el.style.top = y + 'px';
@@ -861,6 +868,10 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
     var self = this;
     var root = document.createElement('div');
     root.setAttribute('data-question-id', question.id);
+    // Opt into the design system's quiz card styling (rounded surface,
+    // subtle border + shadow). Works in concert with the per-type
+    // class applied by _renderObject ("pf-object pf-object-quiz").
+    root.className = 'pf-quiz-question';
 
     // <fieldset><legend> groups the options so a screen reader reads
     // "Question text — option 1, option 2..." instead of an
@@ -880,7 +891,8 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
       for (var i = 0; i < opts.length; i++) {
         var opt = opts[i];
         var label = document.createElement('label');
-        label.style.display = 'block';
+        // Layout comes from .pf-question-options label in the runtime
+        // stylesheet — flex row with soft background and hover state.
         var input = document.createElement('input');
         var inputId = 'pf-' + question.id + '-' + opt.id;
         input.type = 'radio';
@@ -900,7 +912,7 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
       for (var j = 0; j < optsM.length; j++) {
         var optM = optsM[j];
         var labelM = document.createElement('label');
-        labelM.style.display = 'block';
+        // See radio/checkbox styling note above — same flex row.
         var inputM = document.createElement('input');
         var inputMId = 'pf-' + question.id + '-' + optM.id;
         inputM.type = 'checkbox';
@@ -939,10 +951,8 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
       for (var mi = 0; mi < items.length; mi++) {
         var mItem = items[mi];
         var mRow = document.createElement('div');
-        mRow.style.display = 'flex';
-        mRow.style.alignItems = 'center';
-        mRow.style.gap = '8px';
-        mRow.style.marginBottom = '4px';
+        // Layout comes from .pf-quiz-match-row (flex row, soft surface).
+        mRow.className = 'pf-quiz-match-row';
         var mLabel = document.createElement('span');
         mLabel.textContent = mItem.text || mItem.id;
         mRow.appendChild(mLabel);
@@ -982,10 +992,8 @@ export const BROWSER_RUNTIME = `/* Pathfinder Browser Runtime */
           var sOpt = seqOpts.find(function(o) { return o.id === currentIds[si]; });
           var sRow = document.createElement('div');
           sRow.setAttribute('data-seq-item', currentIds[si]);
-          sRow.style.display = 'flex';
-          sRow.style.alignItems = 'center';
-          sRow.style.gap = '8px';
-          sRow.style.marginBottom = '4px';
+          // Layout comes from .pf-quiz-seq-row (flex row with up/down arrow buttons).
+          sRow.className = 'pf-quiz-seq-row';
           var upBtn = document.createElement('button');
           upBtn.type = 'button';
           upBtn.setAttribute('data-action', 'up');

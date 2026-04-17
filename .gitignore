@@ -9,6 +9,9 @@ pathfinder-structure-test-*/
 pathfinder-lms-test-*/
 pathfinder-opt-test-*/
 
+# Dependencies
+node_modules/
+
 # Vitest cache
 node_modules/.vite/
 

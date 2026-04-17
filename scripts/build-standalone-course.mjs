@@ -22,18 +22,116 @@ const html = `<!DOCTYPE html>
 <style>
 ${runtimeCss}
 ${playerCss}
-body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-#pathfinder-course { position: relative; width: 960px; height: 540px; margin: 24px auto; border: 1px solid #ddd; overflow: hidden; }
-#pathfinder-nav { display: flex; gap: 12px; justify-content: center; align-items: center; padding: 12px; }
-#pathfinder-nav button { padding: 8px 16px; font-size: 14px; cursor: pointer; }
+/* Standalone tour shell.
+   - Uses the same design tokens as the runtime (see :root above).
+   - Canvas is 1280x720 to match the compiler default. Shrinks
+     responsively on narrower viewports via transform:scale so the
+     page never needs horizontal scroll.
+   - body + nav override the player.css defaults because this page
+     is a single-file demo, not a full player shell. */
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  background: var(--pf-color-surface-muted);
+  font-family: var(--pf-font-sans);
+  color: var(--pf-color-ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+.tour-shell {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--pf-space-6) var(--pf-space-5) var(--pf-space-5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--pf-space-4);
+}
+.tour-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--pf-space-4);
+}
+.tour-title {
+  font-size: var(--pf-text-lg);
+  font-weight: 600;
+  letter-spacing: var(--pf-tracking-tight);
+  color: var(--pf-color-ink);
+}
+.tour-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pf-space-2);
+  padding: var(--pf-space-1) var(--pf-space-3);
+  background: var(--pf-color-primary-soft);
+  color: var(--pf-color-primary);
+  border-radius: var(--pf-radius-pill);
+  font-size: var(--pf-text-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+#pathfinder-course {
+  position: relative;
+  width: 1280px;
+  height: 720px;
+  background: var(--pf-color-surface);
+  border: 1px solid var(--pf-color-border);
+  border-radius: var(--pf-radius-xl);
+  box-shadow: var(--pf-shadow-lg);
+  overflow: hidden;
+}
+#pathfinder-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--pf-space-4);
+  padding: var(--pf-space-3) var(--pf-space-4);
+  background: var(--pf-color-surface);
+  border: 1px solid var(--pf-color-border);
+  border-radius: var(--pf-radius-pill);
+  box-shadow: var(--pf-shadow-sm);
+}
+#pathfinder-nav button {
+  padding: var(--pf-space-2) var(--pf-space-4);
+  background: var(--pf-color-primary);
+  color: var(--pf-color-primary-ink);
+  border: none;
+  border-radius: var(--pf-radius-md);
+  font-family: inherit;
+  font-size: var(--pf-text-sm);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: background var(--pf-motion-fast) var(--pf-ease-out);
+}
+#pathfinder-nav button:hover { background: var(--pf-color-primary-hover); }
+#pathfinder-nav button:disabled { opacity: 0.4; cursor: not-allowed; }
+#slide-counter {
+  font-size: var(--pf-text-sm);
+  color: var(--pf-color-ink-muted);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  min-width: 60px;
+  text-align: center;
+}
 </style>
 </head>
 <body>
-<div id="pathfinder-course"></div>
-<div id="pathfinder-nav">
-  <button id="btn-prev">&larr; Previous</button>
-  <span id="slide-counter"></span>
-  <button id="btn-next">Next &rarr;</button>
+<div class="tour-shell">
+  <div class="tour-header">
+    <div class="tour-title">Pathfinder Studio</div>
+    <div class="tour-badge">Interactive tour</div>
+  </div>
+  <div id="pathfinder-course"></div>
+  <div id="pathfinder-nav">
+    <button id="btn-prev">&larr; Previous</button>
+    <span id="slide-counter"></span>
+    <button id="btn-next">Next &rarr;</button>
+  </div>
 </div>
 <script>
 ${runtimeJs}

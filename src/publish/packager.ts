@@ -336,21 +336,64 @@ function buildPlayerShell(standard: OutputStandard, cfg: PlayerShellConfig = {})
 }
 
 function buildPlayerCSS(): string {
+  // Player chrome shares the runtime design tokens so the nav bar
+  // doesn't clash with the stage. Colors are duplicated as literal
+  // values here because this stylesheet loads before the runtime CSS
+  // and can't rely on :root custom properties being defined yet.
   return `
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-#pathfinder-course { width: 100%; height: 100%; }
+html, body {
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI Variable', 'Segoe UI', Roboto, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  background: #F4F4ED;
+  color: #1A1A1F;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+#pathfinder-course {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 72px;
+}
 #pathfinder-nav {
   position: fixed; bottom: 0; left: 0; right: 0;
   display: flex; align-items: center; justify-content: center; gap: 16px;
-  padding: 12px; background: rgba(0,0,0,0.8); color: white; z-index: 100;
+  padding: 16px 24px;
+  background: rgba(26, 26, 31, 0.92);
+  color: #FFFFFF;
+  z-index: 100;
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  backdrop-filter: saturate(180%) blur(16px);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 #pathfinder-nav button {
-  background: #1A73E8; color: white; border: none; border-radius: 4px;
-  padding: 8px 16px; cursor: pointer; font-size: 14px;
+  background: #3B3B98;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition: background 120ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-#pathfinder-nav button:hover { background: #1557B0; }
-#slide-counter { font-size: 14px; }
+#pathfinder-nav button:hover { background: #2D2D7A; }
+#pathfinder-nav button:focus-visible {
+  outline: 3px solid rgba(75, 99, 232, 0.55);
+  outline-offset: 2px;
+}
+#pathfinder-nav button:disabled { opacity: 0.4; cursor: not-allowed; }
+#slide-counter {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.75);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
 `;
 }
 
@@ -636,23 +679,341 @@ function computeChecksum(filePath: string): string {
 }
 
 // ---- Runtime CSS ----
+//
+// Design language for every published Pathfinder course. Tokens live
+// at :root so themes can override per-deployment by setting a subset
+// of custom properties on a parent element. The defaults are tuned to
+// feel premium out of the box — typography, color, spacing, motion —
+// so authors don't have to specify styles per object to get a polished
+// course. Inline `obj.style` overrides in project.json still apply on
+// top via _applyStyle() in the runtime.
 
-const BROWSER_RUNTIME_CSS = `/* Pathfinder Runtime CSS */
+const BROWSER_RUNTIME_CSS = `/* Pathfinder Runtime CSS — Design Language v1 */
+
+:root {
+  /* ---- Color: warm, calm, trustworthy. Works for corporate,
+         government, healthcare training. Override at theme layer. ---- */
+  --pf-color-bg: #FAFAF7;
+  --pf-color-surface: #FFFFFF;
+  --pf-color-surface-muted: #F4F4ED;
+  --pf-color-ink: #1A1A1F;
+  --pf-color-ink-muted: #5A5A66;
+  --pf-color-ink-soft: #8A8A95;
+  --pf-color-border: #E8E8E0;
+  --pf-color-border-strong: #C8C8C0;
+  --pf-color-primary: #3B3B98;
+  --pf-color-primary-hover: #2D2D7A;
+  --pf-color-primary-ink: #FFFFFF;
+  --pf-color-primary-soft: #EEEEFA;
+  --pf-color-accent: #E07856;
+  --pf-color-accent-soft: #FBEDE5;
+  --pf-color-success: #2D7D5A;
+  --pf-color-success-soft: #E6F3EC;
+  --pf-color-danger: #B83D3D;
+  --pf-color-danger-soft: #FBECEC;
+  --pf-color-focus-ring: rgba(75, 99, 232, 0.35);
+
+  /* ---- Typography ----
+     Inter is the preferred face; if it isn't installed, a solid
+     system stack preserves the feel without shipping a font file. */
+  --pf-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI Variable', 'Segoe UI', Roboto, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --pf-font-serif: 'Fraunces', 'Source Serif Pro', Georgia, 'Times New Roman', serif;
+  --pf-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+
+  --pf-text-xs: 0.75rem;
+  --pf-text-sm: 0.875rem;
+  --pf-text-base: 1rem;
+  --pf-text-lg: 1.125rem;
+  --pf-text-xl: 1.375rem;
+  --pf-text-2xl: 1.75rem;
+  --pf-text-3xl: 2.25rem;
+  --pf-text-4xl: 3rem;
+
+  --pf-leading-tight: 1.2;
+  --pf-leading-snug: 1.35;
+  --pf-leading-normal: 1.55;
+  --pf-leading-relaxed: 1.7;
+  --pf-tracking-tight: -0.015em;
+  --pf-tracking-normal: 0;
+
+  /* ---- Spacing: 4px base grid ---- */
+  --pf-space-1: 4px;
+  --pf-space-2: 8px;
+  --pf-space-3: 12px;
+  --pf-space-4: 16px;
+  --pf-space-5: 24px;
+  --pf-space-6: 32px;
+  --pf-space-7: 48px;
+  --pf-space-8: 64px;
+
+  /* ---- Radii ---- */
+  --pf-radius-sm: 4px;
+  --pf-radius-md: 8px;
+  --pf-radius-lg: 12px;
+  --pf-radius-xl: 20px;
+  --pf-radius-pill: 999px;
+
+  /* ---- Shadows: subtle, warm-toned ---- */
+  --pf-shadow-sm: 0 1px 2px rgba(22, 22, 26, 0.06), 0 1px 3px rgba(22, 22, 26, 0.08);
+  --pf-shadow-md: 0 4px 10px rgba(22, 22, 26, 0.08), 0 2px 4px rgba(22, 22, 26, 0.06);
+  --pf-shadow-lg: 0 16px 40px rgba(22, 22, 26, 0.12), 0 4px 12px rgba(22, 22, 26, 0.08);
+
+  /* ---- Motion ---- */
+  --pf-motion-fast: 120ms;
+  --pf-motion-normal: 200ms;
+  --pf-motion-slow: 360ms;
+  --pf-ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --pf-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ---- Slide container ---- */
 .pf-slide {
   margin: 0 auto;
   position: relative;
   overflow: hidden;
+  font-family: var(--pf-font-sans);
+  color: var(--pf-color-ink);
+  line-height: var(--pf-leading-normal);
+  font-size: var(--pf-text-base);
+  background: var(--pf-color-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: 'cv11', 'ss01', 'ss03';
 }
-.pf-slide [data-object-id] {
-  box-sizing: border-box;
+.pf-slide *, .pf-slide *::before, .pf-slide *::after { box-sizing: border-box; }
+.pf-slide [data-object-id] { box-sizing: border-box; }
+
+/* ---- Focus visible: accessible across every interactive element ---- */
+.pf-slide :focus-visible {
+  outline: 3px solid var(--pf-color-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--pf-radius-sm);
 }
-.pf-slide button[data-object-id] {
-  cursor: pointer;
+
+/* ---- Text object: rich typography by default ---- */
+.pf-object-text {
+  font-size: var(--pf-text-lg);
+  line-height: var(--pf-leading-normal);
+  color: var(--pf-color-ink);
+}
+.pf-object-text h1, .pf-object-text h2, .pf-object-text h3, .pf-object-text h4 {
+  font-weight: 700;
+  letter-spacing: var(--pf-tracking-tight);
+  line-height: var(--pf-leading-tight);
+  color: var(--pf-color-ink);
+}
+.pf-object-text h1 { font-size: var(--pf-text-4xl); }
+.pf-object-text h2 { font-size: var(--pf-text-3xl); }
+.pf-object-text h3 { font-size: var(--pf-text-2xl); }
+.pf-object-text h4 { font-size: var(--pf-text-xl); }
+.pf-object-text h1 + *, .pf-object-text h2 + *, .pf-object-text h3 + *, .pf-object-text h4 + * {
+  margin-top: var(--pf-space-3);
+}
+.pf-object-text p + p { margin-top: var(--pf-space-3); }
+.pf-object-text strong, .pf-object-text b { font-weight: 600; color: var(--pf-color-ink); }
+.pf-object-text em, .pf-object-text i { font-style: italic; }
+.pf-object-text a {
+  color: var(--pf-color-primary);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+.pf-object-text a:hover { color: var(--pf-color-primary-hover); }
+.pf-object-text ul, .pf-object-text ol { padding-left: var(--pf-space-5); }
+.pf-object-text li + li { margin-top: var(--pf-space-1); }
+
+/* ---- Button object: the primary CTA treatment ---- */
+.pf-object-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--pf-space-2);
+  padding: 0 var(--pf-space-5);
+  background: var(--pf-color-primary);
+  color: var(--pf-color-primary-ink);
   border: none;
-  font: inherit;
+  border-radius: var(--pf-radius-md);
+  font-family: inherit;
+  font-size: var(--pf-text-base);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  box-shadow: var(--pf-shadow-sm);
+  transition: background var(--pf-motion-fast) var(--pf-ease-out),
+              transform var(--pf-motion-fast) var(--pf-ease-out),
+              box-shadow var(--pf-motion-fast) var(--pf-ease-out);
 }
-.pf-slide img[data-object-id] {
+.pf-object-button:hover { background: var(--pf-color-primary-hover); box-shadow: var(--pf-shadow-md); }
+.pf-object-button:active { transform: translateY(1px); box-shadow: var(--pf-shadow-sm); }
+.pf-object-button:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+/* ---- Shape object: a soft surface card by default ---- */
+.pf-object-shape {
+  background: var(--pf-color-surface);
+  border: 1px solid var(--pf-color-border);
+  border-radius: var(--pf-radius-lg);
+}
+
+/* ---- Image object ---- */
+.pf-object-image {
   object-fit: contain;
+  border-radius: var(--pf-radius-md);
+}
+
+/* ---- Media (video/audio) ---- */
+.pf-object-video, .pf-object-audio {
+  border-radius: var(--pf-radius-md);
+  background: #0A0A0F;
+}
+
+/* ---- Media fallback: when src is broken or missing ---- */
+.pf-object [data-media-error],
+[data-media-error] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--pf-space-4);
+  background: var(--pf-color-danger-soft);
+  color: var(--pf-color-danger);
+  border: 1px dashed var(--pf-color-danger);
+  border-radius: var(--pf-radius-md);
+  font-size: var(--pf-text-sm);
+  line-height: var(--pf-leading-snug);
+}
+
+/* ---- Quiz: card, legend, option rows ---- */
+.pf-quiz-question {
+  padding: var(--pf-space-5);
+  background: var(--pf-color-surface);
+  border: 1px solid var(--pf-color-border);
+  border-radius: var(--pf-radius-lg);
+  box-shadow: var(--pf-shadow-sm);
+  overflow: auto;
+}
+.pf-quiz-question fieldset { border: none; padding: 0; margin: 0; }
+.pf-quiz-question legend {
+  display: block;
+  width: 100%;
+  font-size: var(--pf-text-xl);
+  font-weight: 600;
+  line-height: var(--pf-leading-snug);
+  color: var(--pf-color-ink);
+  margin: 0 0 var(--pf-space-4);
+  padding: 0;
+  letter-spacing: var(--pf-tracking-tight);
+}
+.pf-question-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pf-space-2);
+}
+.pf-question-options label {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--pf-space-3);
+  padding: var(--pf-space-3) var(--pf-space-4);
+  background: var(--pf-color-bg);
+  border: 1px solid var(--pf-color-border);
+  border-radius: var(--pf-radius-md);
+  cursor: pointer;
+  font-size: var(--pf-text-base);
+  color: var(--pf-color-ink);
+  line-height: var(--pf-leading-snug);
+  transition: background var(--pf-motion-fast) var(--pf-ease-out),
+              border-color var(--pf-motion-fast) var(--pf-ease-out);
+}
+.pf-question-options label:hover {
+  background: var(--pf-color-primary-soft);
+  border-color: var(--pf-color-primary);
+}
+.pf-question-options label:has(input:checked) {
+  background: var(--pf-color-primary-soft);
+  border-color: var(--pf-color-primary);
+}
+.pf-question-options input[type='radio'],
+.pf-question-options input[type='checkbox'] {
+  margin: 4px 0 0;
+  accent-color: var(--pf-color-primary);
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+.pf-question-options input[type='text'] {
+  padding: var(--pf-space-3) var(--pf-space-4);
+  border: 1px solid var(--pf-color-border-strong);
+  border-radius: var(--pf-radius-md);
+  font-family: inherit;
+  font-size: var(--pf-text-base);
+  color: var(--pf-color-ink);
+  background: var(--pf-color-surface);
+  width: 100%;
+  transition: border-color var(--pf-motion-fast) var(--pf-ease-out),
+              box-shadow var(--pf-motion-fast) var(--pf-ease-out);
+}
+.pf-question-options input[type='text']:focus {
+  outline: none;
+  border-color: var(--pf-color-primary);
+  box-shadow: 0 0 0 3px var(--pf-color-focus-ring);
+}
+.pf-question-options select {
+  padding: var(--pf-space-2) var(--pf-space-3);
+  border: 1px solid var(--pf-color-border-strong);
+  border-radius: var(--pf-radius-sm);
+  font-family: inherit;
+  font-size: var(--pf-text-base);
+  background: var(--pf-color-surface);
+  color: var(--pf-color-ink);
+  cursor: pointer;
+}
+
+/* Matching + sequencing rows */
+.pf-quiz-match-row, .pf-quiz-seq-row {
+  display: flex;
+  align-items: center;
+  gap: var(--pf-space-3);
+  padding: var(--pf-space-3);
+  background: var(--pf-color-bg);
+  border: 1px solid var(--pf-color-border);
+  border-radius: var(--pf-radius-md);
+}
+.pf-quiz-match-row > span:first-child {
+  flex: 1;
+  font-weight: 500;
+  color: var(--pf-color-ink);
+}
+.pf-quiz-seq-row > span {
+  flex: 1;
+  color: var(--pf-color-ink);
+}
+.pf-quiz-seq-row button {
+  padding: 0;
+  width: 28px;
+  height: 28px;
+  background: var(--pf-color-surface);
+  color: var(--pf-color-ink);
+  border: 1px solid var(--pf-color-border-strong);
+  border-radius: var(--pf-radius-sm);
+  cursor: pointer;
+  font-size: var(--pf-text-sm);
+  line-height: 1;
+  transition: background var(--pf-motion-fast) var(--pf-ease-out),
+              border-color var(--pf-motion-fast) var(--pf-ease-out);
+}
+.pf-quiz-seq-row button:hover:not(:disabled) {
+  background: var(--pf-color-primary-soft);
+  border-color: var(--pf-color-primary);
+  color: var(--pf-color-primary);
+}
+.pf-quiz-seq-row button:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* ---- Reduced motion ---- */
+@media (prefers-reduced-motion: reduce) {
+  .pf-slide *, .pf-slide *::before, .pf-slide *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 `;
 
