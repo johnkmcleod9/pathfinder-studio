@@ -336,21 +336,33 @@ function buildPlayerShell(standard: OutputStandard, cfg: PlayerShellConfig = {})
 }
 
 function buildPlayerCSS(): string {
-  // Player chrome shares the runtime design tokens so the nav bar
-  // doesn't clash with the stage. Colors are duplicated as literal
-  // values here because this stylesheet loads before the runtime CSS
-  // and can't rely on :root custom properties being defined yet.
+  // Player chrome (shell around the stage + bottom nav). Loaded
+  // before the runtime CSS, so the literal OKLCH values here are
+  // intentionally duplicated rather than referencing custom
+  // properties that don't exist yet at parse time.
+  //
+  // Design intent: the chrome is part of the editorial paper
+  // system, NOT a dark bar sitting on top of it. Secondary nav
+  // button is ghost (outline), primary is solid tobacco — the
+  // 60-30-10 rule made visible.
   return `
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {
   height: 100%;
   overflow: hidden;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI Variable', 'Segoe UI', Roboto, 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  background: #F4F4ED;
-  color: #1A1A1F;
+  font-family: 'Alegreya Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  background: oklch(0.955 0.008 45);   /* paper canvas, tobacco-tinted */
+  color: oklch(0.22 0.015 45);          /* body ink */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+@media (prefers-color-scheme: dark) {
+  html, body {
+    background: oklch(0.12 0.015 45);
+    color: oklch(0.90 0.010 45);
+  }
+}
+
 #pathfinder-course {
   width: 100%;
   height: 100%;
@@ -359,40 +371,111 @@ html, body {
   justify-content: center;
   padding-bottom: 72px;
 }
+
 #pathfinder-nav {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  display: flex; align-items: center; justify-content: center; gap: 16px;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
   padding: 16px 24px;
-  background: rgba(26, 26, 31, 0.92);
-  color: #FFFFFF;
+  background: oklch(0.985 0.007 45);    /* paper white */
+  border-top: 1px solid oklch(0.86 0.011 45);
+  color: oklch(0.22 0.015 45);
   z-index: 100;
-  -webkit-backdrop-filter: saturate(180%) blur(16px);
-  backdrop-filter: saturate(180%) blur(16px);
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-family: 'Alegreya Sans', ui-sans-serif, system-ui, sans-serif;
 }
+@media (prefers-color-scheme: dark) {
+  #pathfinder-nav {
+    background: oklch(0.16 0.015 45);
+    border-top-color: oklch(0.26 0.014 45);
+    color: oklch(0.90 0.010 45);
+  }
+}
+
+/* Both nav buttons share metrics; the second (Next) gets the
+   primary treatment, the first stays secondary/ghost so we don't
+   present two equally-weighted CTAs. */
 #pathfinder-nav button {
-  background: #3B3B98;
-  color: #FFFFFF;
-  border: none;
+  padding: 0 20px;
+  min-height: 40px;
+  background: transparent;
+  color: oklch(0.30 0.015 45);
+  border: 1px solid oklch(0.72 0.013 45);
   border-radius: 8px;
-  padding: 10px 20px;
   cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  transition: background 120ms cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-#pathfinder-nav button:hover { background: #2D2D7A; }
-#pathfinder-nav button:focus-visible {
-  outline: 3px solid rgba(75, 99, 232, 0.55);
-  outline-offset: 2px;
-}
-#pathfinder-nav button:disabled { opacity: 0.4; cursor: not-allowed; }
-#slide-counter {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.75);
-  font-variant-numeric: tabular-nums;
+  font: 500 14px/1 'Alegreya Sans', ui-sans-serif, system-ui, sans-serif;
   letter-spacing: 0.02em;
+  transition:
+    background 120ms cubic-bezier(0.25, 1, 0.5, 1),
+    border-color 120ms cubic-bezier(0.25, 1, 0.5, 1),
+    color 120ms cubic-bezier(0.25, 1, 0.5, 1);
+}
+#pathfinder-nav button:hover:not(:disabled) {
+  background: oklch(0.93 0.030 45);
+  border-color: oklch(0.48 0.110 45);
+  color: oklch(0.32 0.085 45);
+}
+
+/* Primary = last button (Next). Tobacco fill, paper text, no shadow. */
+#pathfinder-nav button#btn-next {
+  background: oklch(0.48 0.110 45);
+  border-color: oklch(0.48 0.110 45);
+  color: oklch(0.985 0.007 45);
+}
+#pathfinder-nav button#btn-next:hover:not(:disabled) {
+  background: oklch(0.40 0.100 45);
+  border-color: oklch(0.40 0.100 45);
+  color: oklch(0.985 0.007 45);
+}
+
+#pathfinder-nav button:focus-visible {
+  outline: 2px solid oklch(0.55 0.15 45 / 0.55);
+  outline-offset: 3px;
+}
+#pathfinder-nav button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+@media (prefers-color-scheme: dark) {
+  #pathfinder-nav button {
+    color: oklch(0.90 0.010 45);
+    border-color: oklch(0.34 0.015 45);
+  }
+  #pathfinder-nav button:hover:not(:disabled) {
+    background: oklch(0.22 0.015 45);
+    border-color: oklch(0.68 0.100 45);
+    color: oklch(0.85 0.095 45);
+  }
+  #pathfinder-nav button#btn-next {
+    background: oklch(0.68 0.100 45);
+    border-color: oklch(0.68 0.100 45);
+    color: oklch(0.16 0.015 45);
+  }
+  #pathfinder-nav button#btn-next:hover:not(:disabled) {
+    background: oklch(0.75 0.095 45);
+    border-color: oklch(0.75 0.095 45);
+    color: oklch(0.16 0.015 45);
+  }
+}
+
+#slide-counter {
+  font-family: 'Alegreya Sans', ui-sans-serif, system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: oklch(0.42 0.015 45);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+  letter-spacing: 0.04em;
+  min-width: 64px;
+  text-align: center;
+}
+@media (prefers-color-scheme: dark) {
+  #slide-counter {
+    color: oklch(0.72 0.012 45);
+  }
 }
 `;
 }
@@ -680,339 +763,599 @@ function computeChecksum(filePath: string): string {
 
 // ---- Runtime CSS ----
 //
-// Design language for every published Pathfinder course. Tokens live
-// at :root so themes can override per-deployment by setting a subset
-// of custom properties on a parent element. The defaults are tuned to
-// feel premium out of the box — typography, color, spacing, motion —
-// so authors don't have to specify styles per object to get a polished
-// course. Inline `obj.style` overrides in project.json still apply on
-// top via _applyStyle() in the runtime.
+// Design language for every published Pathfinder course.
+// Established via the Impeccable design skill; full Design Context
+// lives at `.impeccable.md` in the repo root.
+//
+// Aesthetic direction: Crisp · Editorial · Grown-up.
+// Lineage: Craft / Bear / Ghost, pulled toward editorial precision.
+// Serif for learner-reading content (Alegreya), sans for UI chrome
+// (Alegreya Sans) — a designed pair from Huerta Tipográfica, chosen
+// explicitly outside Impeccable's reflex_fonts_to_reject list.
+// Tobacco brand hue at oklch(0.48 0.11 45). Both themes (light + dark)
+// designed intentionally rather than auto-inverted — dark theme gets
+// its own token values that respect dark-mode depth conventions
+// (lighter surfaces for elevation, reduced body font weight).
+//
+// Inline `obj.style` overrides from project.json still apply on top
+// via _applyStyle() in the runtime.
 
-const BROWSER_RUNTIME_CSS = `/* Pathfinder Runtime CSS — Design Language v1 */
+const BROWSER_RUNTIME_CSS = `/* Pathfinder Runtime CSS — Design Language v2 (Impeccable craft) */
+
+@import url('https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,700&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;0,900;1,400&display=swap');
+
+/* ============================================================
+   TOKENS — Light theme (default)
+   Tobacco brand hue (H=45) with chroma-tinted warm neutrals.
+   Every neutral carries 0.007–0.015 chroma toward hue 45, so
+   the whole surface reads as a cohesive warm paper system
+   rather than a cool off-white.
+   ============================================================ */
 
 :root {
-  /* ---- Color: warm, calm, trustworthy. Works for corporate,
-         government, healthcare training. Override at theme layer. ---- */
-  --pf-color-bg: #FAFAF7;
-  --pf-color-surface: #FFFFFF;
-  --pf-color-surface-muted: #F4F4ED;
-  --pf-color-ink: #1A1A1F;
-  --pf-color-ink-muted: #5A5A66;
-  --pf-color-ink-soft: #8A8A95;
-  --pf-color-border: #E8E8E0;
-  --pf-color-border-strong: #C8C8C0;
-  --pf-color-primary: #3B3B98;
-  --pf-color-primary-hover: #2D2D7A;
-  --pf-color-primary-ink: #FFFFFF;
-  --pf-color-primary-soft: #EEEEFA;
-  --pf-color-accent: #E07856;
-  --pf-color-accent-soft: #FBEDE5;
-  --pf-color-success: #2D7D5A;
-  --pf-color-success-soft: #E6F3EC;
-  --pf-color-danger: #B83D3D;
-  --pf-color-danger-soft: #FBECEC;
-  --pf-color-focus-ring: rgba(75, 99, 232, 0.35);
+  /* Neutrals — ink scale, tobacco-tinted (c≈0.007–0.015). */
+  --pf-ink-50:  oklch(0.985 0.007 45);   /* paper white */
+  --pf-ink-100: oklch(0.955 0.008 45);   /* surface muted */
+  --pf-ink-200: oklch(0.92  0.010 45);   /* subtle surface */
+  --pf-ink-300: oklch(0.86  0.011 45);   /* border subtle */
+  --pf-ink-400: oklch(0.72  0.013 45);   /* border strong */
+  --pf-ink-500: oklch(0.55  0.014 45);   /* tertiary text */
+  --pf-ink-600: oklch(0.42  0.015 45);   /* secondary text */
+  --pf-ink-700: oklch(0.30  0.015 45);   /* body emphasis */
+  --pf-ink-800: oklch(0.22  0.015 45);   /* body text */
+  --pf-ink-900: oklch(0.16  0.015 45);   /* heading / max contrast */
+  --pf-ink-950: oklch(0.12  0.015 45);   /* dark-theme canvas */
 
-  /* ---- Typography ----
-     Inter is the preferred face; if it isn't installed, a solid
-     system stack preserves the feel without shipping a font file. */
-  --pf-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI Variable', 'Segoe UI', Roboto, 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  --pf-font-serif: 'Fraunces', 'Source Serif Pro', Georgia, 'Times New Roman', serif;
-  --pf-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+  /* Primary — tobacco scale. Full saturation at 500. */
+  --pf-primary-50:  oklch(0.97 0.015 45);
+  --pf-primary-100: oklch(0.93 0.030 45);
+  --pf-primary-200: oklch(0.86 0.055 45);
+  --pf-primary-300: oklch(0.75 0.085 45);
+  --pf-primary-400: oklch(0.62 0.100 45);
+  --pf-primary-500: oklch(0.48 0.110 45);  /* TOBACCO — brand voice */
+  --pf-primary-600: oklch(0.40 0.100 45);
+  --pf-primary-700: oklch(0.32 0.085 45);
+  --pf-primary-800: oklch(0.24 0.060 45);
+  --pf-primary-900: oklch(0.17 0.035 45);
 
-  --pf-text-xs: 0.75rem;
-  --pf-text-sm: 0.875rem;
-  --pf-text-base: 1rem;
-  --pf-text-lg: 1.125rem;
-  --pf-text-xl: 1.375rem;
-  --pf-text-2xl: 1.75rem;
-  --pf-text-3xl: 2.25rem;
-  --pf-text-4xl: 3rem;
+  /* Semantic — desaturated, tobacco-adjacent warmth. */
+  --pf-success-600: oklch(0.48 0.080 155);
+  --pf-success-100: oklch(0.94 0.020 155);
+  --pf-danger-600:  oklch(0.48 0.140 25);
+  --pf-danger-100:  oklch(0.94 0.025 25);
 
-  --pf-leading-tight: 1.2;
-  --pf-leading-snug: 1.35;
-  --pf-leading-normal: 1.55;
+  /* Semantic surface tokens (light theme). */
+  --pf-surface-canvas:  var(--pf-ink-50);
+  --pf-surface-paper:   oklch(0.99 0.005 45);
+  --pf-surface-raised:  oklch(1.0  0.002 45);
+  --pf-surface-muted:   var(--pf-ink-100);
+  --pf-surface-sunken:  var(--pf-ink-200);
+
+  --pf-text-primary:    var(--pf-ink-900);
+  --pf-text-body:       var(--pf-ink-800);
+  --pf-text-secondary:  var(--pf-ink-600);
+  --pf-text-tertiary:   var(--pf-ink-500);
+  --pf-text-placeholder: var(--pf-ink-400);
+  --pf-text-on-primary: var(--pf-ink-50);
+  --pf-text-link:       var(--pf-primary-700);
+  --pf-text-link-hover: var(--pf-primary-800);
+
+  --pf-border-subtle:   var(--pf-ink-200);
+  --pf-border-default:  var(--pf-ink-300);
+  --pf-border-strong:   var(--pf-ink-400);
+
+  --pf-brand:           var(--pf-primary-500);
+  --pf-brand-hover:     var(--pf-primary-600);
+  --pf-brand-active:    var(--pf-primary-700);
+  --pf-brand-soft:      var(--pf-primary-100);
+  --pf-brand-soft-border: var(--pf-primary-300);
+
+  --pf-focus-ring: oklch(0.55 0.15 45 / 0.45);
+
+  /* Typography — Alegreya (reading serif) + Alegreya Sans (UI).
+     Chosen outside Impeccable's reflex_fonts_to_reject list; a
+     designed pair from Huerta Tipográfica. Alegreya is purpose-
+     built for long-form literature reading, Old Style humanist
+     with real calligraphic personality. Fallback stack keeps
+     layout stable if Google Fonts is blocked. */
+  --pf-font-serif: 'Alegreya', ui-serif, Georgia, 'Book Antiqua', 'Times New Roman', serif;
+  --pf-font-sans:  'Alegreya Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --pf-font-mono:  ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Type scale — 1.333 ratio (perfect fourth), fixed rem for
+     app UI per Impeccable typography reference. */
+  --pf-text-xs:    0.75rem;     /* 12px */
+  --pf-text-sm:    0.875rem;    /* 14px */
+  --pf-text-base:  1.0625rem;   /* 17px — Alegreya reads better at 17 */
+  --pf-text-lg:    1.4375rem;   /* 23px */
+  --pf-text-xl:    1.75rem;     /* 28px */
+  --pf-text-2xl:   2.25rem;     /* 36px */
+  --pf-text-3xl:   3rem;        /* 48px */
+  --pf-text-4xl:   4rem;        /* 64px */
+
+  --pf-leading-tight:   1.15;
+  --pf-leading-snug:    1.35;
+  --pf-leading-normal:  1.55;
   --pf-leading-relaxed: 1.7;
-  --pf-tracking-tight: -0.015em;
-  --pf-tracking-normal: 0;
+  --pf-tracking-tight:  -0.012em;
 
-  /* ---- Spacing: 4px base grid ---- */
-  --pf-space-1: 4px;
-  --pf-space-2: 8px;
-  --pf-space-3: 12px;
-  --pf-space-4: 16px;
-  --pf-space-5: 24px;
-  --pf-space-6: 32px;
-  --pf-space-7: 48px;
-  --pf-space-8: 64px;
+  /* Spacing — 4pt base, semantic names. */
+  --pf-space-3xs: 2px;
+  --pf-space-2xs: 4px;
+  --pf-space-xs:  8px;
+  --pf-space-sm:  12px;
+  --pf-space-md:  16px;
+  --pf-space-lg:  24px;
+  --pf-space-xl:  32px;
+  --pf-space-2xl: 48px;
+  --pf-space-3xl: 64px;
+  --pf-space-4xl: 96px;
 
-  /* ---- Radii ---- */
-  --pf-radius-sm: 4px;
-  --pf-radius-md: 8px;
-  --pf-radius-lg: 12px;
-  --pf-radius-xl: 20px;
+  /* Radii — restrained, editorial. Nothing pillowy. */
+  --pf-radius-sm:   2px;
+  --pf-radius-md:   4px;
+  --pf-radius-lg:   8px;
+  --pf-radius-xl:   12px;
   --pf-radius-pill: 999px;
 
-  /* ---- Shadows: subtle, warm-toned ---- */
-  --pf-shadow-sm: 0 1px 2px rgba(22, 22, 26, 0.06), 0 1px 3px rgba(22, 22, 26, 0.08);
-  --pf-shadow-md: 0 4px 10px rgba(22, 22, 26, 0.08), 0 2px 4px rgba(22, 22, 26, 0.06);
-  --pf-shadow-lg: 0 16px 40px rgba(22, 22, 26, 0.12), 0 4px 12px rgba(22, 22, 26, 0.08);
+  /* Shadows — a whisper. Most depth comes from surface + border,
+     shadow is reserved for elevated overlays. */
+  --pf-shadow-sm: 0 1px 2px oklch(0.2 0.02 45 / 0.05);
+  --pf-shadow-md: 0 4px 16px oklch(0.2 0.02 45 / 0.06);
+  --pf-shadow-lg: 0 20px 48px oklch(0.2 0.02 45 / 0.10);
 
-  /* ---- Motion ---- */
-  --pf-motion-fast: 120ms;
-  --pf-motion-normal: 200ms;
-  --pf-motion-slow: 360ms;
-  --pf-ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
-  --pf-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  /* Motion. */
+  --pf-motion-fast:   120ms;
+  --pf-motion-normal: 220ms;
+  --pf-motion-slow:   360ms;
+  --pf-ease-out:       cubic-bezier(0.25, 1, 0.5, 1);     /* quart */
+  --pf-ease-out-expo:  cubic-bezier(0.16, 1, 0.3, 1);     /* snappy */
+  --pf-ease-in-out:    cubic-bezier(0.65, 0, 0.35, 1);
 }
 
-/* ---- Slide container ---- */
+/* ============================================================
+   TOKENS — Dark theme
+   Per Impeccable color reference: dark mode is NOT inverted
+   light mode. Depth comes from surface LIGHTNESS, not shadow;
+   higher elevations are LIGHTER. Body text weight reduces
+   (450 instead of 500) because light-on-dark reads as heavier.
+   Accents desaturate slightly to avoid the AI-neon-on-dark
+   fingerprint.
+   ============================================================ */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --pf-surface-canvas:  var(--pf-ink-950);
+    --pf-surface-paper:   oklch(0.14 0.014 45);
+    --pf-surface-raised:  oklch(0.18 0.014 45);
+    --pf-surface-muted:   oklch(0.21 0.013 45);
+    --pf-surface-sunken:  oklch(0.10 0.015 45);
+
+    --pf-text-primary:    oklch(0.96 0.010 45);
+    --pf-text-body:       oklch(0.90 0.010 45);
+    --pf-text-secondary:  oklch(0.72 0.012 45);
+    --pf-text-tertiary:   oklch(0.58 0.013 45);
+    --pf-text-placeholder: oklch(0.45 0.014 45);
+    --pf-text-on-primary: oklch(0.16 0.015 45);  /* dark ink on light tobacco */
+    --pf-text-link:       oklch(0.78 0.100 45);
+    --pf-text-link-hover: oklch(0.85 0.095 45);
+
+    --pf-border-subtle:   oklch(0.26 0.014 45);
+    --pf-border-default:  oklch(0.34 0.015 45);
+    --pf-border-strong:   oklch(0.48 0.017 45);
+
+    /* Primary lifts lighter on dark + chroma slightly down. */
+    --pf-brand:           oklch(0.68 0.100 45);
+    --pf-brand-hover:     oklch(0.75 0.095 45);
+    --pf-brand-active:    oklch(0.82 0.085 45);
+    --pf-brand-soft:      oklch(0.26 0.040 45);
+    --pf-brand-soft-border: oklch(0.40 0.070 45);
+
+    --pf-focus-ring: oklch(0.72 0.130 45 / 0.55);
+
+    /* Semantic adjusted for dark surfaces. */
+    --pf-success-600: oklch(0.72 0.090 155);
+    --pf-success-100: oklch(0.22 0.028 155);
+    --pf-danger-600:  oklch(0.72 0.130 25);
+    --pf-danger-100:  oklch(0.22 0.035 25);
+
+    /* Dark mode: no shadows. Use lighter surfaces for elevation. */
+    --pf-shadow-sm: none;
+    --pf-shadow-md: none;
+    --pf-shadow-lg: 0 24px 64px oklch(0.05 0.02 45 / 0.4);
+  }
+}
+
+/* ============================================================
+   STAGE
+   The slide is the editorial page, not a card. No drop shadow,
+   no wrapping rounded-rectangle. Background surfaces are author-
+   controlled via slide.background; the tokens below only apply
+   when a slide declares no explicit background.
+   ============================================================ */
+
 .pf-slide {
   margin: 0 auto;
   position: relative;
   overflow: hidden;
-  font-family: var(--pf-font-sans);
-  color: var(--pf-color-ink);
-  line-height: var(--pf-leading-normal);
+  font-family: var(--pf-font-serif);
   font-size: var(--pf-text-base);
-  background: var(--pf-color-bg);
+  font-weight: 400;
+  color: var(--pf-text-body);
+  line-height: var(--pf-leading-normal);
+  background: var(--pf-surface-canvas);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  font-feature-settings: 'cv11', 'ss01', 'ss03';
-}
-.pf-slide *, .pf-slide *::before, .pf-slide *::after { box-sizing: border-box; }
-.pf-slide [data-object-id] { box-sizing: border-box; }
-
-/* ---- Focus visible: accessible across every interactive element ---- */
-.pf-slide :focus-visible {
-  outline: 3px solid var(--pf-color-focus-ring);
-  outline-offset: 2px;
-  border-radius: var(--pf-radius-sm);
+  font-feature-settings: 'kern', 'liga', 'onum';
+  font-variant-numeric: oldstyle-nums;
 }
 
-/* ---- Text object: rich typography by default ---- */
+/* Light-text-on-dark (per slide background) reads as heavier; the
+   dark theme extends line-height slightly per Impeccable guidance. */
+@media (prefers-color-scheme: dark) {
+  .pf-slide {
+    font-weight: 450;
+    line-height: calc(var(--pf-leading-normal) + 0.08);
+  }
+}
+
+.pf-slide *, .pf-slide *::before, .pf-slide *::after {
+  box-sizing: border-box;
+}
+.pf-slide [data-object-id] {
+  box-sizing: border-box;
+}
+
+/* ============================================================
+   FOCUS
+   The ring is the same warmth as the brand, not a cold tech-blue.
+   Applied inside the slide and on course chrome.
+   ============================================================ */
+
+.pf-slide :focus-visible,
+#pathfinder-nav :focus-visible {
+  outline: 2px solid var(--pf-focus-ring);
+  outline-offset: 3px;
+  border-radius: var(--pf-radius-md);
+}
+
+/* ============================================================
+   TEXT OBJECTS
+   Learner-reading content. Serif by default; hierarchy by
+   size+weight, never by color alone. No "+icon above every
+   heading" AI template.
+   ============================================================ */
+
 .pf-object-text {
-  font-size: var(--pf-text-lg);
+  font-family: var(--pf-font-serif);
+  font-size: var(--pf-text-base);
   line-height: var(--pf-leading-normal);
-  color: var(--pf-color-ink);
+  color: var(--pf-text-body);
 }
-.pf-object-text h1, .pf-object-text h2, .pf-object-text h3, .pf-object-text h4 {
+.pf-object-text h1,
+.pf-object-text h2,
+.pf-object-text h3,
+.pf-object-text h4 {
+  font-family: var(--pf-font-serif);
   font-weight: 700;
   letter-spacing: var(--pf-tracking-tight);
   line-height: var(--pf-leading-tight);
-  color: var(--pf-color-ink);
+  color: var(--pf-text-primary);
+  margin: 0;
 }
-.pf-object-text h1 { font-size: var(--pf-text-4xl); }
+.pf-object-text h1 { font-size: var(--pf-text-4xl); font-weight: 800; }
 .pf-object-text h2 { font-size: var(--pf-text-3xl); }
 .pf-object-text h3 { font-size: var(--pf-text-2xl); }
-.pf-object-text h4 { font-size: var(--pf-text-xl); }
-.pf-object-text h1 + *, .pf-object-text h2 + *, .pf-object-text h3 + *, .pf-object-text h4 + * {
-  margin-top: var(--pf-space-3);
+.pf-object-text h4 { font-size: var(--pf-text-xl); font-weight: 600; }
+.pf-object-text h1 + *,
+.pf-object-text h2 + *,
+.pf-object-text h3 + *,
+.pf-object-text h4 + * {
+  margin-top: var(--pf-space-md);
 }
-.pf-object-text p + p { margin-top: var(--pf-space-3); }
-.pf-object-text strong, .pf-object-text b { font-weight: 600; color: var(--pf-color-ink); }
+.pf-object-text p { margin: 0; max-width: 62ch; }
+.pf-object-text p + p { margin-top: var(--pf-space-md); }
+.pf-object-text strong, .pf-object-text b { font-weight: 700; color: var(--pf-text-primary); }
 .pf-object-text em, .pf-object-text i { font-style: italic; }
 .pf-object-text a {
-  color: var(--pf-color-primary);
+  color: var(--pf-text-link);
   text-decoration: underline;
   text-decoration-thickness: 1px;
-  text-underline-offset: 2px;
+  text-underline-offset: 3px;
+  transition: color var(--pf-motion-fast) var(--pf-ease-out);
 }
-.pf-object-text a:hover { color: var(--pf-color-primary-hover); }
-.pf-object-text ul, .pf-object-text ol { padding-left: var(--pf-space-5); }
-.pf-object-text li + li { margin-top: var(--pf-space-1); }
+.pf-object-text a:hover { color: var(--pf-text-link-hover); }
+.pf-object-text ul, .pf-object-text ol { padding-left: var(--pf-space-lg); margin: 0; }
+.pf-object-text li + li { margin-top: var(--pf-space-xs); }
+.pf-object-text blockquote {
+  margin: var(--pf-space-md) 0;
+  padding: 0 0 0 var(--pf-space-md);
+  border-inline-start: 1px solid var(--pf-border-default);
+  font-style: italic;
+  color: var(--pf-text-secondary);
+}
+.pf-object-text code {
+  font-family: var(--pf-font-mono);
+  font-size: 0.92em;
+  padding: 0.1em 0.3em;
+  background: var(--pf-surface-muted);
+  border-radius: var(--pf-radius-sm);
+}
 
-/* ---- Button object: the primary CTA treatment ---- */
+/* ============================================================
+   BUTTON OBJECTS
+   UI chrome — sans-serif, confident weight, tobacco by default.
+   Editorial spirit: no drop shadow (anti-AI-slop), border gives
+   form at rest, hover lifts via color and subtle scale.
+   ============================================================ */
+
 .pf-object-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--pf-space-2);
-  padding: 0 var(--pf-space-5);
-  background: var(--pf-color-primary);
-  color: var(--pf-color-primary-ink);
-  border: none;
-  border-radius: var(--pf-radius-md);
-  font-family: inherit;
-  font-size: var(--pf-text-base);
+  gap: var(--pf-space-xs);
+  padding: 0 var(--pf-space-lg);
+  background: var(--pf-brand);
+  color: var(--pf-text-on-primary);
+  border: 1px solid transparent;
+  border-radius: var(--pf-radius-lg);
+  font-family: var(--pf-font-sans);
+  font-size: var(--pf-text-sm);
   font-weight: 600;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.02em;
+  text-transform: none;
   cursor: pointer;
-  box-shadow: var(--pf-shadow-sm);
-  transition: background var(--pf-motion-fast) var(--pf-ease-out),
-              transform var(--pf-motion-fast) var(--pf-ease-out),
-              box-shadow var(--pf-motion-fast) var(--pf-ease-out);
+  transition:
+    background var(--pf-motion-fast) var(--pf-ease-out),
+    color var(--pf-motion-fast) var(--pf-ease-out),
+    border-color var(--pf-motion-fast) var(--pf-ease-out),
+    transform var(--pf-motion-fast) var(--pf-ease-out-expo);
+  min-height: 44px; /* a11y tap target */
 }
-.pf-object-button:hover { background: var(--pf-color-primary-hover); box-shadow: var(--pf-shadow-md); }
-.pf-object-button:active { transform: translateY(1px); box-shadow: var(--pf-shadow-sm); }
-.pf-object-button:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+.pf-object-button:hover:not(:disabled) {
+  background: var(--pf-brand-hover);
+}
+.pf-object-button:active:not(:disabled) {
+  background: var(--pf-brand-active);
+  transform: translateY(1px);
+}
+.pf-object-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
 
-/* ---- Shape object: a soft surface card by default ---- */
+/* ============================================================
+   SHAPE OBJECTS
+   Not-every-shape-is-a-card. Default to a flat tinted surface
+   with a hairline border — no drop shadow. Author's inline
+   styles still override for hero backdrops etc.
+   ============================================================ */
+
 .pf-object-shape {
-  background: var(--pf-color-surface);
-  border: 1px solid var(--pf-color-border);
+  background: var(--pf-surface-paper);
+  border: 1px solid var(--pf-border-subtle);
   border-radius: var(--pf-radius-lg);
 }
 
-/* ---- Image object ---- */
+/* ============================================================
+   IMAGE / MEDIA
+   ============================================================ */
+
 .pf-object-image {
   object-fit: contain;
-  border-radius: var(--pf-radius-md);
+  border-radius: var(--pf-radius-lg);
+}
+.pf-object-video,
+.pf-object-audio {
+  border-radius: var(--pf-radius-lg);
+  background: var(--pf-ink-950);
 }
 
-/* ---- Media (video/audio) ---- */
-.pf-object-video, .pf-object-audio {
-  border-radius: var(--pf-radius-md);
-  background: #0A0A0F;
-}
-
-/* ---- Media fallback: when src is broken or missing ---- */
+/* Media fallback: honest, not-cute. No clip-art icon — just a
+   labelled panel the learner can read. */
 .pf-object [data-media-error],
 [data-media-error] {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--pf-space-4);
-  background: var(--pf-color-danger-soft);
-  color: var(--pf-color-danger);
-  border: 1px dashed var(--pf-color-danger);
-  border-radius: var(--pf-radius-md);
+  padding: var(--pf-space-md);
+  background: var(--pf-danger-100);
+  color: var(--pf-danger-600);
+  border: 1px solid var(--pf-danger-600);
+  border-radius: var(--pf-radius-lg);
+  font-family: var(--pf-font-sans);
   font-size: var(--pf-text-sm);
+  font-weight: 500;
   line-height: var(--pf-leading-snug);
 }
 
-/* ---- Quiz: card, legend, option rows ---- */
+/* ============================================================
+   QUIZ
+   The quiz IS a card (bounded interaction), but editorial —
+   flat, bordered, no drop shadow. Legend in serif (it's
+   reading content); options in serif (also reading content);
+   input chrome and arrow buttons in sans.
+   ============================================================ */
+
 .pf-quiz-question {
-  padding: var(--pf-space-5);
-  background: var(--pf-color-surface);
-  border: 1px solid var(--pf-color-border);
-  border-radius: var(--pf-radius-lg);
-  box-shadow: var(--pf-shadow-sm);
+  padding: var(--pf-space-xl);
+  background: var(--pf-surface-paper);
+  border: 1px solid var(--pf-border-default);
+  border-radius: var(--pf-radius-xl);
   overflow: auto;
+  font-family: var(--pf-font-serif);
 }
-.pf-quiz-question fieldset { border: none; padding: 0; margin: 0; }
+.pf-quiz-question fieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
+}
 .pf-quiz-question legend {
   display: block;
   width: 100%;
-  font-size: var(--pf-text-xl);
+  padding: 0;
+  margin: 0 0 var(--pf-space-lg);
+  font-family: var(--pf-font-serif);
+  font-size: var(--pf-text-lg);
   font-weight: 600;
   line-height: var(--pf-leading-snug);
-  color: var(--pf-color-ink);
-  margin: 0 0 var(--pf-space-4);
-  padding: 0;
+  color: var(--pf-text-primary);
   letter-spacing: var(--pf-tracking-tight);
 }
 .pf-question-options {
   display: flex;
   flex-direction: column;
-  gap: var(--pf-space-2);
+  gap: var(--pf-space-xs);
 }
+
+/* Option rows — tinted panel, hairline border, warmth on hover,
+   saturated border + soft-tobacco fill when selected. No check-
+   mark decoration needed; the native accent-color does the work. */
 .pf-question-options label {
   display: flex;
   align-items: flex-start;
-  gap: var(--pf-space-3);
-  padding: var(--pf-space-3) var(--pf-space-4);
-  background: var(--pf-color-bg);
-  border: 1px solid var(--pf-color-border);
-  border-radius: var(--pf-radius-md);
+  gap: var(--pf-space-sm);
+  padding: var(--pf-space-sm) var(--pf-space-md);
+  background: var(--pf-surface-canvas);
+  border: 1px solid var(--pf-border-subtle);
+  border-radius: var(--pf-radius-lg);
   cursor: pointer;
+  font-family: var(--pf-font-serif);
   font-size: var(--pf-text-base);
-  color: var(--pf-color-ink);
+  color: var(--pf-text-body);
   line-height: var(--pf-leading-snug);
-  transition: background var(--pf-motion-fast) var(--pf-ease-out),
-              border-color var(--pf-motion-fast) var(--pf-ease-out);
+  transition:
+    background var(--pf-motion-fast) var(--pf-ease-out),
+    border-color var(--pf-motion-fast) var(--pf-ease-out);
+  min-height: 44px;
 }
 .pf-question-options label:hover {
-  background: var(--pf-color-primary-soft);
-  border-color: var(--pf-color-primary);
+  background: var(--pf-brand-soft);
+  border-color: var(--pf-brand-soft-border);
 }
 .pf-question-options label:has(input:checked) {
-  background: var(--pf-color-primary-soft);
-  border-color: var(--pf-color-primary);
+  background: var(--pf-brand-soft);
+  border-color: var(--pf-brand);
+  color: var(--pf-text-primary);
 }
 .pf-question-options input[type='radio'],
 .pf-question-options input[type='checkbox'] {
-  margin: 4px 0 0;
-  accent-color: var(--pf-color-primary);
+  margin: 5px 0 0;
+  accent-color: var(--pf-brand);
   flex-shrink: 0;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
 }
+
+/* Text inputs — a single hairline, warm on focus. */
 .pf-question-options input[type='text'] {
-  padding: var(--pf-space-3) var(--pf-space-4);
-  border: 1px solid var(--pf-color-border-strong);
-  border-radius: var(--pf-radius-md);
-  font-family: inherit;
+  padding: var(--pf-space-sm) var(--pf-space-md);
+  border: 1px solid var(--pf-border-strong);
+  border-radius: var(--pf-radius-lg);
+  font-family: var(--pf-font-sans);
   font-size: var(--pf-text-base);
-  color: var(--pf-color-ink);
-  background: var(--pf-color-surface);
+  color: var(--pf-text-body);
+  background: var(--pf-surface-raised);
   width: 100%;
-  transition: border-color var(--pf-motion-fast) var(--pf-ease-out),
-              box-shadow var(--pf-motion-fast) var(--pf-ease-out);
+  transition:
+    border-color var(--pf-motion-fast) var(--pf-ease-out),
+    box-shadow var(--pf-motion-fast) var(--pf-ease-out);
+  min-height: 44px;
 }
 .pf-question-options input[type='text']:focus {
   outline: none;
-  border-color: var(--pf-color-primary);
-  box-shadow: 0 0 0 3px var(--pf-color-focus-ring);
+  border-color: var(--pf-brand);
+  box-shadow: 0 0 0 3px var(--pf-focus-ring);
 }
-.pf-question-options select {
-  padding: var(--pf-space-2) var(--pf-space-3);
-  border: 1px solid var(--pf-color-border-strong);
-  border-radius: var(--pf-radius-sm);
-  font-family: inherit;
-  font-size: var(--pf-text-base);
-  background: var(--pf-color-surface);
-  color: var(--pf-color-ink);
-  cursor: pointer;
+.pf-question-options input[type='text']::placeholder {
+  color: var(--pf-text-placeholder);
 }
 
-/* Matching + sequencing rows */
-.pf-quiz-match-row, .pf-quiz-seq-row {
+/* Select (matching) — sans, clear chevron, same focus treatment. */
+.pf-question-options select {
+  padding: var(--pf-space-xs) var(--pf-space-md) var(--pf-space-xs) var(--pf-space-sm);
+  border: 1px solid var(--pf-border-strong);
+  border-radius: var(--pf-radius-md);
+  font-family: var(--pf-font-sans);
+  font-size: var(--pf-text-sm);
+  font-weight: 500;
+  background: var(--pf-surface-raised);
+  color: var(--pf-text-body);
+  cursor: pointer;
+  min-height: 36px;
+}
+.pf-question-options select:focus-visible {
+  outline: 2px solid var(--pf-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Matching + sequencing rows — bone surface, hairline border,
+   left label in serif (reading content), UI controls in sans. */
+.pf-quiz-match-row,
+.pf-quiz-seq-row {
   display: flex;
   align-items: center;
-  gap: var(--pf-space-3);
-  padding: var(--pf-space-3);
-  background: var(--pf-color-bg);
-  border: 1px solid var(--pf-color-border);
-  border-radius: var(--pf-radius-md);
+  gap: var(--pf-space-sm);
+  padding: var(--pf-space-sm) var(--pf-space-md);
+  background: var(--pf-surface-canvas);
+  border: 1px solid var(--pf-border-subtle);
+  border-radius: var(--pf-radius-lg);
 }
 .pf-quiz-match-row > span:first-child {
   flex: 1;
+  font-family: var(--pf-font-serif);
   font-weight: 500;
-  color: var(--pf-color-ink);
+  color: var(--pf-text-primary);
 }
 .pf-quiz-seq-row > span {
   flex: 1;
-  color: var(--pf-color-ink);
+  font-family: var(--pf-font-serif);
+  color: var(--pf-text-body);
 }
+
+/* Sequencing up/down arrow buttons — small, sans, no-shadow. */
 .pf-quiz-seq-row button {
   padding: 0;
-  width: 28px;
-  height: 28px;
-  background: var(--pf-color-surface);
-  color: var(--pf-color-ink);
-  border: 1px solid var(--pf-color-border-strong);
-  border-radius: var(--pf-radius-sm);
-  cursor: pointer;
-  font-size: var(--pf-text-sm);
+  width: 32px;
+  height: 32px;
+  background: var(--pf-surface-raised);
+  color: var(--pf-text-secondary);
+  border: 1px solid var(--pf-border-strong);
+  border-radius: var(--pf-radius-md);
+  font-family: var(--pf-font-sans);
+  font-size: var(--pf-text-xs);
   line-height: 1;
-  transition: background var(--pf-motion-fast) var(--pf-ease-out),
-              border-color var(--pf-motion-fast) var(--pf-ease-out);
+  cursor: pointer;
+  transition:
+    background var(--pf-motion-fast) var(--pf-ease-out),
+    border-color var(--pf-motion-fast) var(--pf-ease-out),
+    color var(--pf-motion-fast) var(--pf-ease-out);
 }
 .pf-quiz-seq-row button:hover:not(:disabled) {
-  background: var(--pf-color-primary-soft);
-  border-color: var(--pf-color-primary);
-  color: var(--pf-color-primary);
+  background: var(--pf-brand-soft);
+  border-color: var(--pf-brand);
+  color: var(--pf-brand);
 }
-.pf-quiz-seq-row button:disabled { opacity: 0.3; cursor: not-allowed; }
+.pf-quiz-seq-row button:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
 
-/* ---- Reduced motion ---- */
+/* ============================================================
+   REDUCED MOTION
+   Preserve functional motion; drop spatial motion.
+   ============================================================ */
+
 @media (prefers-reduced-motion: reduce) {
-  .pf-slide *, .pf-slide *::before, .pf-slide *::after {
+  .pf-slide *,
+  .pf-slide *::before,
+  .pf-slide *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
   }
 }
 `;
